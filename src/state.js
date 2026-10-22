@@ -11,9 +11,9 @@ function isoInDays(days) {
 export function initialData() {
   return {
     templateId: 'royal',
-    groom: { name: 'Aarav', parents: 'Mr. & Mrs. Rajesh Sharma', avatar: defaultAvatar('groom'), photo: null },
-    bride: { name: 'Diya', parents: 'Mr. & Mrs. Anil Verma', avatar: defaultAvatar('bride'), photo: null },
-    blessings: 'Smt. Kamla Devi & Late Shri Ram Prasad Sharma',
+    groom: { name: 'Manu Kushwaha', parents: 'Mr. & Mrs. Rajesh Kushwaha', avatar: defaultAvatar('groom'), photo: null },
+    bride: { name: 'Jyoti Kumari', parents: 'Mr. & Mrs. Anil Verma', avatar: defaultAvatar('bride'), photo: null },
+    blessings: 'Smt. Kamla Devi & Late Shri Ram Prasad Kushwaha',
     inviteLine: 'request the pleasure of your company at the wedding of',
     date: isoInDays(90),
     time: '19:30',
@@ -27,8 +27,8 @@ export function initialData() {
       { name: 'Reception', date: isoInDays(91), time: '20:00', venue: '' },
     ],
     showInvocation: true,
-    hashtag: '#AaravWedsDiya',
-    rsvp: 'Sharma Family · +91 98765 43210',
+    hashtag: '#ManuWedsJyoti',
+    rsvp: 'Kushwaha Family · +91 98765 43210',
     closing: 'Your presence and blessings will make our celebration complete',
     includePhotos: false,
     music: { mode: 'generated', style: 'auto' },

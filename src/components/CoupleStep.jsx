@@ -54,11 +54,11 @@ function PersonCard({ who, person, onChange }) {
         <div className="fields">
           <label className="input">
             <span>{title}'s name</span>
-            <input value={person.name} onChange={(e) => onChange({ ...person, name: e.target.value })} placeholder={who === 'groom' ? 'Aarav' : 'Diya'} maxLength={40} />
+            <input value={person.name} onChange={(e) => onChange({ ...person, name: e.target.value })} placeholder={who === 'groom' ? 'Manu Kushwaha' : 'Jyoti Kumari'} maxLength={40} />
           </label>
           <label className="input">
             <span>Parents (optional)</span>
-            <input value={person.parents} onChange={(e) => onChange({ ...person, parents: e.target.value })} placeholder="Mr. & Mrs. Sharma" maxLength={80} />
+            <input value={person.parents} onChange={(e) => onChange({ ...person, parents: e.target.value })} placeholder="Mr. & Mrs. Kushwaha" maxLength={80} />
           </label>
           <button className="link-btn" onClick={() => setEditing((v) => !v)}>
             {editing ? '▾ Hide avatar options' : '▸ Customise avatar'}

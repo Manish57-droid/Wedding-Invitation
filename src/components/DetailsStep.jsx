@@ -63,7 +63,7 @@ export default function DetailsStep({ data, update }) {
           <Input label="With the blessings of (optional)" value={data.blessings} onChange={(e) => update({ blessings: e.target.value })} placeholder="Grandparents / elders" maxLength={90} />
           <Input label="Invitation line" value={data.inviteLine} onChange={(e) => update({ inviteLine: e.target.value })} maxLength={90} />
           <Input label="Closing message" value={data.closing} onChange={(e) => update({ closing: e.target.value })} maxLength={110} />
-          <Input label="Wedding hashtag" value={data.hashtag} onChange={(e) => update({ hashtag: e.target.value })} placeholder="#AaravWedsDiya" maxLength={32} />
+          <Input label="Wedding hashtag" value={data.hashtag} onChange={(e) => update({ hashtag: e.target.value })} placeholder="#ManuWedsJyoti" maxLength={32} />
           <Input label="RSVP" value={data.rsvp} onChange={(e) => update({ rsvp: e.target.value })} placeholder="Name · phone" maxLength={70} />
         </div>
         <div className="toggles">
