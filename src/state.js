@@ -11,7 +11,7 @@ function isoInDays(days) {
 export function initialData() {
   return {
     templateId: 'royal',
-    groom: { name: 'Manu Kushwaha', parents: 'Mr. & Mrs. Rajesh Kushwaha', avatar: defaultAvatar('groom'), photo: null },
+    groom: { name: 'Manu Kushwaha', parents: 'Mr. & Mrs. Kushwaha', avatar: defaultAvatar('groom'), photo: null },
     bride: { name: 'Jyoti Kumari', parents: 'Mr. & Mrs. Kushwaha', avatar: defaultAvatar('bride'), photo: null },
     blessings: 'Smt. Kamla Devi & Late Shri Ram Prasad Kushwaha',
     inviteLine: 'request the pleasure of your company at the wedding of',
