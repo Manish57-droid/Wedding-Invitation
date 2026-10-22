@@ -10,8 +10,32 @@ export const VIDEO_H = H
  * Create a renderer for one invitation. render(ctx, t) draws frame t (seconds)
  * and is a pure function of t, so preview and export produce identical frames.
  */
+/** Apply the user's text and colour customisations on top of a template's defaults. */
+export function applyCustomization(base, custom = {}) {
+  const tx = custom.texts || {}
+  const pick = (v, d) => (typeof v === 'string' && v.trim() ? v.trim() : d)
+  return {
+    ...base,
+    palette: {
+      ...base.palette,
+      accent: custom.accent || base.palette.accent,
+      heading: custom.heading || base.palette.heading,
+    },
+    tagline: {
+      deva: tx.deva === undefined ? base.tagline.deva : tx.deva.trim(),
+      main: pick(tx.main, base.tagline.main),
+      sub: pick(tx.sub, base.tagline.sub),
+    },
+    coupleLine: pick(tx.coupleLine, base.coupleLine),
+    dateHeading: pick(tx.dateHeading, base.dateHeading),
+    eventsHeading: pick(tx.eventsHeading, base.eventsHeading),
+    thanks: pick(tx.thanks, base.thanks),
+  }
+}
+
 export function createInvitation(data, assets) {
-  const theme = getTemplate(data.templateId)
+  const theme = applyCustomization(getTemplate(data.templateId), data.custom)
+  const sceneFn = (id) => theme.scenes?.[id] || SCENES[id]
   const { scenes, duration } = buildTimeline(data, theme, assets)
   const openingScene = scenes.find((s) => s.id === 'opening')
 
@@ -27,7 +51,7 @@ export function createInvitation(data, assets) {
       const local = t - s.start
       if (local < 0 || local > s.dur || s.id === 'invocation') continue
       ctx.save()
-      SCENES[s.id](ctx, local, s.dur, env)
+      sceneFn(s.id)(ctx, local, s.dur, env)
       ctx.restore()
     }
     // doors / curtains stay closed until the opening scene, so the invocation sits on top of them
@@ -35,7 +59,7 @@ export function createInvitation(data, assets) {
     const inv = scenes.find((s) => s.id === 'invocation')
     if (inv && t <= inv.start + inv.dur) {
       ctx.save()
-      SCENES.invocation(ctx, t - inv.start, inv.dur, env)
+      sceneFn('invocation')(ctx, t - inv.start, inv.dur, env)
       ctx.restore()
     }
 

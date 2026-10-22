@@ -1,4 +1,15 @@
-const EVENT_SUGGESTIONS = ['Haldi', 'Mehendi', 'Sangeet', 'Engagement', 'Wedding', 'Baraat', 'Reception', 'Cocktail', 'Puja']
+import { addDays } from '../state.js'
+
+const EVENT_SUGGESTIONS = ['Haldi', 'Mehendi', 'Sangeet', 'Engagement', 'Wedding', 'Baraat', 'Reception', 'Cocktail', 'Puja', 'Tilak', 'Roka']
+
+// [name, day offset from the wedding date, time]
+const PRESETS = [
+  { label: '💍 Only wedding', events: [['Wedding', 0, null]] },
+  { label: '🌼 Haldi + Mehendi + Wedding', events: [['Haldi', -1, '10:00'], ['Mehendi', -1, '16:00'], ['Wedding', 0, null]] },
+  { label: '🎶 Mehendi + Sangeet + Wedding', events: [['Mehendi', -1, '15:00'], ['Sangeet', -1, '19:00'], ['Wedding', 0, null]] },
+  { label: '✨ Full celebration', events: [['Haldi', -2, '10:00'], ['Mehendi', -2, '16:00'], ['Sangeet', -1, '19:00'], ['Wedding', 0, null], ['Reception', 1, '20:00']] },
+  { label: '🚫 No functions list', events: [] },
+]
 
 function Input({ label, hint, ...props }) {
   return (
@@ -22,7 +33,12 @@ export default function DetailsStep({ data, update }) {
       ;[ev[i], ev[j]] = [ev[j], ev[i]]
       return { events: ev }
     })
-  const unused = EVENT_SUGGESTIONS.filter((s) => !data.events.some((e) => e.name.toLowerCase() === s.toLowerCase()))
+  const applyPreset = (p) =>
+    update((d) => ({
+      events: p.events.map(([name, offset, time]) => ({ name, date: addDays(d.date, offset), time: time ?? d.time, venue: '' })),
+      scenes: { ...d.scenes, events: true },
+    }))
+  const unused =EVENT_SUGGESTIONS.filter((s) => !data.events.some((e) => e.name.toLowerCase() === s.toLowerCase()))
 
   return (
     <section>
@@ -64,8 +80,16 @@ export default function DetailsStep({ data, update }) {
 
       <div className="card">
         <div className="card-head">
-          <h2>Functions & events</h2>
-          <span className="muted">{data.events.length}/6 shown in video</span>
+          <h2>Functions</h2>
+          <span className="muted">{data.events.length ? `${Math.min(data.events.length, 6)} shown in video` : 'No functions list in video'}</span>
+        </div>
+        <p className="muted">Every family does it differently. Start from a preset, then rename, re-order, remove (✕) or add your own.</p>
+        <div className="chips presets">
+          {PRESETS.map((p) => (
+            <button key={p.label} type="button" className="chip" onClick={() => applyPreset(p)}>
+              {p.label}
+            </button>
+          ))}
         </div>
         <div className="events">
           {data.events.map((ev, i) => (

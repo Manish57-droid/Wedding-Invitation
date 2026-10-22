@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { TEMPLATES } from '../engine/templates/index.js'
 import { useInvitation } from '../hooks/useInvitation.js'
+import CustomizePanel from './CustomizePanel.jsx'
 
 /** Animated thumbnail; renders at reduced frame rate to stay light. */
 function Thumb({ invitation }) {
@@ -28,7 +29,7 @@ function Thumb({ invitation }) {
 }
 
 function TemplateCard({ template, data, selected, onSelect }) {
-  const { invitation } = useInvitation({ ...data, templateId: template.id, showInvocation: false }, 0)
+  const { invitation } = useInvitation({ ...data, templateId: template.id, showInvocation: false }, 300)
   return (
     <button className={`template-card ${selected ? 'selected' : ''}`} onClick={onSelect} aria-pressed={selected}>
       <div className="thumb">{invitation ? <Thumb invitation={invitation} /> : <div className="thumb-loading">Loading…</div>}</div>
@@ -51,9 +52,17 @@ export default function TemplateStep({ data, update }) {
       </div>
       <div className="template-grid">
         {TEMPLATES.map((t) => (
-          <TemplateCard key={t.id} template={t} data={data} selected={data.templateId === t.id} onSelect={() => update({ templateId: t.id, showInvocation: t.id !== 'minimal' ? data.showInvocation : false })} />
+          <TemplateCard
+            key={t.id}
+            template={t}
+            data={data}
+            selected={data.templateId === t.id}
+            // colours belong to a template, so switching resets them; custom wording is kept
+            onSelect={() => update((d) => ({ templateId: t.id, showInvocation: t.id !== 'minimal' ? d.showInvocation : false, custom: { ...d.custom, accent: '', heading: '' } }))}
+          />
         ))}
       </div>
+      <CustomizePanel data={data} update={update} />
     </section>
   )
 }

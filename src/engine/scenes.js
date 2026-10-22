@@ -38,7 +38,7 @@ function invocation(ctx, local, dur, env) {
   mandala(ctx, W / 2, 780, 190, rgba(P.accent, 0.35), -t * 0.2, p, 2)
   if (theme.emblem === 'kalash') {
     const s = 150 * ease.outBack(prog(local, 0.4, 1))
-    if (s > 0) kalash(ctx, W / 2, 800, s, P.accent, t)
+    if (s > 0) kalash(ctx, W / 2, 800, s, theme.emblemColor || P.accent, t)
   } else {
     heart(ctx, W / 2, 790, 120 * ease.outBack(prog(local, 0.4, 1)), P.accent)
   }
@@ -404,13 +404,14 @@ export const SCENES = { invocation, opening, couple, families, dateVenue, events
 /** Build the scene list for this invitation; scenes overlap slightly for cross-fades. */
 export function buildTimeline(data, theme, assets) {
   const list = []
+  const on = (id) => data.scenes?.[id] !== false
   if (data.showInvocation) list.push(['invocation', 4])
-  list.push(['opening', 4.6])
+  list.push(['opening', theme.openingDuration || 4.6])
   list.push(['couple', 7.2])
-  if (data.groom?.parents || data.bride?.parents || data.blessings) list.push(['families', 6])
-  if (data.date || data.venue) list.push(['dateVenue', 6])
+  if (on('families') && (data.groom?.parents || data.bride?.parents || data.blessings)) list.push(['families', 6])
+  if (on('dateVenue') && (data.date || data.venue)) list.push(['dateVenue', 6.5])
   const evCount = (data.events || []).filter((e) => e.name?.trim()).length
-  if (evCount) list.push(['events', 2.6 + Math.min(evCount, 6) * 0.9])
+  if (on('events') && evCount) list.push(['events', 2.6 + Math.min(evCount, 6) * 0.9])
   if (data.includePhotos && (assets?.photos?.groom || assets?.photos?.bride)) list.push(['photos', 5])
   list.push(['closing', 6.5])
   const overlap = 0.5
@@ -420,6 +421,5 @@ export function buildTimeline(data, theme, assets) {
     start += dur - overlap
     return s
   })
-  void theme
   return { scenes, duration: start + overlap }
 }

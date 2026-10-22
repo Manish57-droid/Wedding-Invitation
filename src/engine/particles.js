@@ -83,6 +83,24 @@ export function risingLanterns(ctx, t, W, H, { count = 12, seed = 21 } = {}) {
   }
 }
 
+export function confetti(ctx, t, W, H, { count = 40, colors = ['#e63946', '#ffbe0b', '#3a86ff', '#ff70a6', '#06d6a0'], seed = 13, alpha = 1 } = {}) {
+  ctx.save()
+  ctx.globalAlpha *= alpha
+  for (let i = 0; i < count; i++) {
+    const speed = 110 + rnd(i, seed) * 140
+    const x = rnd(i, seed + 1) * W + Math.sin(t * 1.7 + i) * 40
+    const y = ((rnd(i, seed + 2) * (H + 100) + t * speed) % (H + 100)) - 50
+    ctx.save()
+    ctx.translate(x, y)
+    ctx.rotate(t * (2 + rnd(i, seed + 3) * 4) + i)
+    ctx.scale(1, Math.cos(t * 5 + i))
+    ctx.fillStyle = colors[i % colors.length]
+    ctx.fillRect(-7, -4, 14, 8)
+    ctx.restore()
+  }
+  ctx.restore()
+}
+
 export function floatingDots(ctx, t, W, H, { count = 30, color = '#c9a27e', seed = 5 } = {}) {
   for (let i = 0; i < count; i++) {
     const x = rnd(i, seed) * W + Math.sin(t * 0.4 + i) * 30

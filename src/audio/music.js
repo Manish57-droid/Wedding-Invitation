@@ -4,6 +4,7 @@ export const SAMPLE_RATE = 48000
 
 export const MUSIC_STYLES = [
   { id: 'royal', label: 'Royal santoor (Raag Yaman)' },
+  { id: 'bhangra', label: 'Upbeat dhol & bhangra' },
   { id: 'festive', label: 'Festive dholak & shehnai' },
   { id: 'dreamy', label: 'Dreamy night bells' },
   { id: 'piano', label: 'Soft piano' },
@@ -126,6 +127,62 @@ function drum(ctx, dest, noise, time, kind, gain = 1) {
   }
 }
 
+/** Punjabi dhol: deep "dagga" bass side or sharp "tilli" treble side. */
+function dhol(ctx, dest, noise, time, side, gain = 1) {
+  if (side === 'dagga') {
+    const o = ctx.createOscillator()
+    o.frequency.setValueAtTime(110, time)
+    o.frequency.exponentialRampToValueAtTime(48, time + 0.3)
+    const g = ctx.createGain()
+    env(g, time, 0.75 * gain, 0.002, 0.4)
+    o.connect(g).connect(dest)
+    o.start(time)
+    o.stop(time + 0.45)
+  }
+  const n = ctx.createBufferSource()
+  n.buffer = noise
+  const bp = ctx.createBiquadFilter()
+  bp.type = 'bandpass'
+  bp.frequency.value = side === 'dagga' ? 300 : 1800
+  bp.Q.value = 1.2
+  const ng = ctx.createGain()
+  env(ng, time, (side === 'dagga' ? 0.25 : 0.32) * gain, 0.001, side === 'dagga' ? 0.12 : 0.08)
+  n.connect(bp).connect(ng).connect(dest)
+  n.start(time, (time * 5.1) % 0.5, 0.15)
+}
+
+function clap(ctx, dest, noise, time, gain = 0.25) {
+  for (const d of [0, 0.012, 0.024]) {
+    const n = ctx.createBufferSource()
+    n.buffer = noise
+    const bp = ctx.createBiquadFilter()
+    bp.type = 'bandpass'
+    bp.frequency.value = 1300
+    bp.Q.value = 0.9
+    const g = ctx.createGain()
+    env(g, time + d, gain, 0.001, d === 0.024 ? 0.14 : 0.03)
+    n.connect(bp).connect(g).connect(dest)
+    n.start(time + d, ((time + d) * 3.7) % 0.5, 0.2)
+  }
+}
+
+/** Tumbi-like twang: bright square pluck with a little downward pitch bend. */
+function tumbi(ctx, dest, time, freq, gain = 0.09) {
+  const o = ctx.createOscillator()
+  o.type = 'square'
+  o.frequency.setValueAtTime(freq * 1.03, time)
+  o.frequency.exponentialRampToValueAtTime(freq, time + 0.05)
+  const lp = ctx.createBiquadFilter()
+  lp.type = 'lowpass'
+  lp.frequency.setValueAtTime(4200, time)
+  lp.frequency.exponentialRampToValueAtTime(900, time + 0.25)
+  const g = ctx.createGain()
+  env(g, time, gain, 0.002, 0.28)
+  o.connect(lp).connect(g).connect(dest)
+  o.start(time)
+  o.stop(time + 0.32)
+}
+
 function tanpura(ctx, dest, start, end, gain = 0.05) {
   // Pa – Sa – Sa – Sa(low) cycle, each string ringing long
   const strings = [hz(-5 - 12), hz(-12), hz(-12), hz(-24)]
@@ -207,7 +264,42 @@ export async function generateMusic(style, duration) {
   const rnd = seeded({ royal: 11, festive: 23, dreamy: 37, piano: 51 }[style] || 1)
   const scale = SCALES[style] || SCALES.royal
 
-  if (style === 'festive') {
+  if (style === 'bhangra') {
+    const beat = 60 / 104
+    const s16 = beat / 4
+    // classic bhangra chaal on the dhol, 16th-note grid
+    const daggaHits = [0, 3, 6, 8, 11, 14]
+    const tilliHits = [2, 4, 7, 10, 12, 13, 15]
+    const start = 0.4
+    const bars = Math.ceil((duration - start) / (beat * 4))
+    // catchy tumbi hook, repeated with a variation every 4th bar
+    const hook = [12, null, 12, 14, 12, null, 9, null, 7, null, 9, 12, null, 9, 7, null]
+    const hookB = [14, null, 14, 16, 14, null, 12, null, 9, null, 12, 14, null, 12, 9, null]
+    const bass = [0, 0, -5, -3]
+    for (let bar = 0; bar < bars; bar++) {
+      const t0 = start + bar * beat * 4
+      const intro = bar < 1
+      for (let i = 0; i < 16; i++) {
+        const t = t0 + i * s16
+        if (t > duration - 0.6) break
+        if (daggaHits.includes(i)) dhol(ctx, bus, noise, t, 'dagga', intro ? 0.6 : 1)
+        if (tilliHits.includes(i) && !intro) dhol(ctx, bus, noise, t, 'tilli', 0.8)
+        if (!intro && (i === 4 || i === 12)) clap(ctx, bus, noise, t)
+        const h = (bar % 4 === 3 ? hookB : hook)[i]
+        if (!intro && h !== null && bar % 8 < 6) tumbi(ctx, bus, t, hz(h))
+      }
+      // bass line on the downbeats
+      if (!intro) {
+        const root = bass[bar % 4]
+        for (const b of [0, 1.5, 2, 3]) pluck(ctx, bus, t0 + b * beat, hz(root - 24), { gain: 0.22, decay: 0.45, partials: [1, 0.5, 0.2], type: 'triangle' })
+      }
+      // shehnai-style lead answers the hook in the last bars of each 8
+      if (bar % 8 >= 6) {
+        const notes = melody(SCALES.festive, 8, rnd, 8)
+        notes.forEach((n, i) => n !== null && reed(ctx, bus, t0 + (i * beat) / 2, hz(n + 12), beat * 0.5, 0.05))
+      }
+    }
+  } else if (style === 'festive') {
     const beat = 60 / 112
     tanpura(ctx, bus, 0, duration, 0.03)
     const pattern = ['dhol', null, 'ta', 'dhol', 'na', null, 'dhol', 'ta']

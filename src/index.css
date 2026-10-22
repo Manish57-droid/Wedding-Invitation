@@ -684,3 +684,10 @@ textarea {
     font-size: 14px;
   }
 }
+
+.customize {
+  margin-top: 26px;
+}
+.presets {
+  margin: 4px 0 16px;
+}

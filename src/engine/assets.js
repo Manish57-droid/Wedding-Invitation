@@ -12,6 +12,10 @@ const FONT_SPECS = [
   '400 40px "Playfair Display"',
   '600 40px "Playfair Display"',
   '700 40px "Playfair Display"',
+  '400 40px "Caveat"',
+  '700 40px "Caveat"',
+  '400 40px "Patrick Hand"',
+  '400 40px "Bebas Neue"',
 ]
 
 let fontsReady = null
