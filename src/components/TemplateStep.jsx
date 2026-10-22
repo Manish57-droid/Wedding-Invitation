@@ -3,27 +3,54 @@ import { TEMPLATES } from '../engine/templates/index.js'
 import { useInvitation } from '../hooks/useInvitation.js'
 import CustomizePanel from './CustomizePanel.jsx'
 
-/** Animated thumbnail; renders at reduced frame rate to stay light. */
+/**
+ * Animated thumbnail. Only animates while on screen and the tab is visible,
+ * at a reduced frame rate, so six previews stay light on phones.
+ */
 function Thumb({ invitation }) {
   const ref = useRef(null)
   useEffect(() => {
     if (!invitation) return
     const canvas = ref.current
     const ctx = canvas.getContext('2d')
-    let raf
+    // skip the slow-starting intro so the thumbnail shows the couple quickly
+    const offset = invitation.scenes.find((s) => s.id === 'couple')?.start ?? 0
+    let raf = 0
     let last = 0
-    const start = performance.now()
+    let visible = false
+    let elapsed = 2.5
+    let prev = performance.now()
+    invitation.render(ctx, offset + elapsed)
+
     const loop = (now) => {
       raf = requestAnimationFrame(loop)
-      if (now - last < 50) return
+      if (now - last < 66) return
+      elapsed += Math.min(0.1, (now - prev) / 1000)
+      prev = now
       last = now
-      // skip the slow-starting intro so the thumbnail shows the couple quickly
-      const offset = invitation.scenes.find((s) => s.id === 'couple')?.start ?? 0
-      const t = (offset + (now - start) / 1000) % invitation.duration
-      invitation.render(ctx, t)
+      invitation.render(ctx, (offset + elapsed) % invitation.duration)
     }
-    raf = requestAnimationFrame(loop)
-    return () => cancelAnimationFrame(raf)
+    const sync = () => {
+      const run = visible && !document.hidden
+      if (run && !raf) {
+        prev = performance.now()
+        raf = requestAnimationFrame(loop)
+      } else if (!run && raf) {
+        cancelAnimationFrame(raf)
+        raf = 0
+      }
+    }
+    const io = new IntersectionObserver(([e]) => {
+      visible = e.isIntersecting
+      sync()
+    })
+    io.observe(canvas)
+    document.addEventListener('visibilitychange', sync)
+    return () => {
+      io.disconnect()
+      document.removeEventListener('visibilitychange', sync)
+      cancelAnimationFrame(raf)
+    }
   }, [invitation])
   return <canvas ref={ref} width={270} height={480} className="thumb-canvas" />
 }
@@ -32,11 +59,12 @@ function TemplateCard({ template, data, selected, onSelect }) {
   const { invitation } = useInvitation({ ...data, templateId: template.id, showInvocation: false }, 300)
   return (
     <button className={`template-card ${selected ? 'selected' : ''}`} onClick={onSelect} aria-pressed={selected}>
-      <div className="thumb">{invitation ? <Thumb invitation={invitation} /> : <div className="thumb-loading">Loading…</div>}</div>
+      <div className="thumb">
+        {invitation ? <Thumb invitation={invitation} /> : <div className="thumb-loading">Loading…</div>}
+        {selected && <span className="badge thumb-badge">✓ Selected</span>}
+      </div>
       <div className="template-meta">
-        <h3>
-          {template.name} {selected && <span className="badge">Selected</span>}
-        </h3>
+        <h3>{template.name}</h3>
         <p>{template.description}</p>
       </div>
     </button>

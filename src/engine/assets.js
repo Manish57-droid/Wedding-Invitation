@@ -36,8 +36,23 @@ function loadImage(src) {
   })
 }
 
+// Every template thumbnail uses the same avatars; caching keeps phones from running out of memory.
+const bitmapCache = new Map()
+const CACHE_LIMIT = 8
+
 /** Rasterise an SVG string at `scale`x so it stays crisp when drawn large in the video. */
-export async function svgToBitmap(svg, scale = 2) {
+export function svgToBitmap(svg, scale = 2) {
+  const key = `${scale}:${svg}`
+  if (!bitmapCache.has(key)) {
+    const job = rasterize(svg, scale)
+    job.catch(() => bitmapCache.delete(key))
+    bitmapCache.set(key, job)
+    if (bitmapCache.size > CACHE_LIMIT) bitmapCache.delete(bitmapCache.keys().next().value)
+  }
+  return bitmapCache.get(key)
+}
+
+async function rasterize(svg, scale) {
   const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }))
   try {
     const img = await loadImage(url)

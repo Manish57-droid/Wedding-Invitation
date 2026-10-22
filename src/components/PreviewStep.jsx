@@ -52,8 +52,11 @@ function Player({ invitation, audioBuffer, disabled }) {
   }
 
   useEffect(() => {
-    if (invitation && canvasRef.current) invitation.render(canvasRef.current.getContext('2d'), t)
-  }, [invitation, t])
+    if (!invitation || !canvasRef.current) return
+    // frame 0 is a fade from black, so show the couple as a poster before playback starts
+    const poster = (invitation.scenes.find((s) => s.id === 'couple')?.start ?? 0) + 4.5
+    invitation.render(canvasRef.current.getContext('2d'), t === 0 && !playing ? poster : t)
+  }, [invitation, t, playing])
 
   useEffect(() => {
     if (!playing || !invitation) return
@@ -154,6 +157,8 @@ export default function PreviewStep({ data, update }) {
     try {
       const out = await exportVideo({ invitation, audioBuffer: music.buffer, signal: ac.signal, onProgress: (p) => setExporting({ progress: p }) })
       setResult({ ...out, url: URL.createObjectURL(out.blob), name: `${fileName}.${out.ext}` })
+      // on phones the result appears below the fold
+      setTimeout(() => document.querySelector('.result')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100)
     } catch (e) {
       if (e.name !== 'AbortError') alert(`Video export failed: ${e.message}`)
     } finally {
@@ -172,7 +177,7 @@ export default function PreviewStep({ data, update }) {
   const canShare = result && typeof navigator.canShare === 'function' && navigator.canShare({ files: [new File([result.blob], result.name, { type: result.blob.type })] })
 
   return (
-    <section>
+    <section className="preview-step">
       <div className="section-head">
         <h1>Preview & download</h1>
         <p>Press play to watch your invitation. When it looks right, create the video. Rendering happens on your device, no upload needed.</p>
@@ -231,6 +236,7 @@ export default function PreviewStep({ data, update }) {
                 <div className="progress">
                   <div style={{ width: `${Math.round(exporting.progress * 100)}%` }} />
                 </div>
+                <small className="muted">Keep this screen open until it finishes.</small>
                 <div className="progress-row">
                   <span>Rendering… {Math.round(exporting.progress * 100)}%</span>
                   <button className="link-btn" onClick={() => abortRef.current?.abort()}>
@@ -247,14 +253,14 @@ export default function PreviewStep({ data, update }) {
               <div className="result">
                 <video src={result.url} controls playsInline />
                 <div className="result-actions">
-                  <a className="btn primary" href={result.url} download={result.name}>
-                    ⬇ Download {result.ext.toUpperCase()}
-                  </a>
                   {canShare && (
-                    <button className="btn ghost" onClick={share}>
-                      Share…
+                    <button className="btn primary" onClick={share}>
+                      📤 Share to WhatsApp / Instagram
                     </button>
                   )}
+                  <a className={`btn ${canShare ? 'ghost' : 'primary'}`} href={result.url} download={result.name}>
+                    ⬇ Download {result.ext.toUpperCase()}
+                  </a>
                 </div>
                 <small className="muted">
                   {(result.blob.size / 1024 / 1024).toFixed(1)} MB · {result.width}×{result.height}

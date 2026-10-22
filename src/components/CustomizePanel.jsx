@@ -53,13 +53,17 @@ export default function CustomizePanel({ data, update }) {
   const toggle = ([k, , where], v) => (where === 'root' ? update({ [k]: v }) : update((d) => ({ scenes: { ...d.scenes, [k]: v } })))
 
   return (
-    <div className="card customize">
-      <div className="card-head">
-        <h2>Customise “{tpl.name}”</h2>
-        <button type="button" className="link-btn" onClick={() => update({ custom: { accent: '', heading: '', texts: {} } })}>
-          Reset to template
-        </button>
-      </div>
+    <details className="card customize">
+      <summary>
+        <span>
+          <h2>Customise “{tpl.name}”</h2>
+          <small className="muted">Titles, colours and which sections appear</small>
+        </span>
+        <span className="chev" aria-hidden="true">▾</span>
+      </summary>
+      <button type="button" className="link-btn reset" onClick={() => update({ custom: { accent: '', heading: '', texts: {} } })}>
+        Reset wording & colours
+      </button>
 
       <div className="field">
         <span className="field-label">Sections in the video</span>
@@ -88,6 +92,6 @@ export default function CustomizePanel({ data, update }) {
         <ColorRow label="Title colour" value={custom.heading} fallback={tpl.palette.heading} onChange={(heading) => setCustom({ heading })} />
         <ColorRow label="Accent colour" value={custom.accent} fallback={tpl.palette.accent} onChange={(accent) => setCustom({ accent })} />
       </div>
-    </div>
+    </details>
   )
 }

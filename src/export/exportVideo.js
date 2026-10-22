@@ -11,8 +11,8 @@ export function canExportMp4() {
   return typeof window !== 'undefined' && 'VideoEncoder' in window && 'VideoFrame' in window
 }
 
-async function pickVideoConfig() {
-  for (const cand of VIDEO_CANDIDATES) {
+async function pickVideoConfig(small) {
+  for (const cand of small ? VIDEO_CANDIDATES.slice(1) : VIDEO_CANDIDATES) {
     for (const codec of cand.codecs) {
       const config = { codec, width: cand.w, height: cand.h, bitrate: cand.bitrate, framerate: FPS, avc: { format: 'avc' } }
       try {
@@ -44,10 +44,12 @@ async function pickAudioConfig(sampleRate) {
  * Render every frame offline with WebCodecs and mux into an MP4 (H.264 + AAC).
  * Faster than real time on most devices and frame-perfect.
  */
-export async function exportMp4({ invitation, audioBuffer, onProgress, signal }) {
-  const vConf = await pickVideoConfig()
+export async function exportMp4({ invitation, audioBuffer, onProgress, signal, small = false }) {
+  const vConf = await pickVideoConfig(small)
   if (!vConf) throw new Error('This browser cannot encode H.264 video')
   const aConf = audioBuffer ? await pickAudioConfig(audioBuffer.sampleRate) : null
+  // some mobile browsers encode video but not audio; never silently drop the music
+  if (audioBuffer && !aConf) throw new Error('This browser cannot encode audio with WebCodecs')
 
   const muxer = new Muxer({
     target: new ArrayBufferTarget(),
@@ -172,14 +174,32 @@ export async function exportRealtime({ invitation, audioBuffer, onProgress, sign
   return { blob: new Blob(chunks, { type }), ext: type.includes('mp4') ? 'mp4' : 'webm', width: 720, height: 1280 }
 }
 
-export async function exportVideo(opts) {
-  if (canExportMp4()) {
-    try {
-      return await exportMp4(opts)
-    } catch (e) {
-      if (e.name === 'AbortError') throw e
-      console.warn('WebCodecs export failed, falling back to real-time recording', e)
-    }
+/** Keep the phone screen on while rendering; a sleeping screen pauses the page. */
+async function keepAwake() {
+  try {
+    return await navigator.wakeLock?.request('screen')
+  } catch {
+    return null
   }
-  return exportRealtime(opts)
+}
+
+export async function exportVideo(opts) {
+  const lock = await keepAwake()
+  try {
+    if (canExportMp4()) {
+      // full HD first, then 720p for phones that run out of memory or lack a 1080p encoder
+      for (const small of [false, true]) {
+        try {
+          return await exportMp4({ ...opts, small })
+        } catch (e) {
+          if (e.name === 'AbortError') throw e
+          console.warn(`WebCodecs export failed (${small ? '720p' : '1080p'})`, e)
+          if (/audio/i.test(e.message)) break
+        }
+      }
+    }
+    return await exportRealtime(opts)
+  } finally {
+    lock?.release().catch(() => {})
+  }
 }
