@@ -4,7 +4,7 @@ import { divider } from '../ornaments.js'
 import { sparkles } from '../particles.js'
 import { roundRect } from '../scenes.js'
 import { drawText } from '../text.js'
-import { DEFAULT_TEXT, H, W, clipAbove } from './base.js'
+import { H, W, clipAbove } from './base.js'
 
 const GOLD = '#f2c14e'
 const RED = '#b0122b'
@@ -93,10 +93,10 @@ function clapperboard(ctx, local, theme) {
   ctx.moveTo(0, 40)
   ctx.lineTo(0, 150)
   ctx.stroke()
-  drawText(ctx, theme.tagline.main, 0, -50, { family: F.title, size: 82, color: '#fff', maxWidth: 540, spacing: 4 })
-  drawText(ctx, 'SCENE 1', -140, 96, { family: F.title, size: 54, color: '#eee', maxWidth: 260 })
-  drawText(ctx, 'TAKE 1', 140, 96, { family: F.title, size: 54, color: '#eee', maxWidth: 260 })
-  drawText(ctx, 'DIRECTED BY DESTINY', 0, 214, { family: F.title, size: 50, color: GOLD, maxWidth: 540, spacing: 3 })
+  drawText(ctx, theme.texts.main, 0, -50, { family: F.title, size: 82, color: '#fff', maxWidth: 540, spacing: 4 })
+  drawText(ctx, theme.texts.scene, -140, 96, { family: F.title, size: 54, color: '#eee', maxWidth: 260 })
+  drawText(ctx, theme.texts.take, 140, 96, { family: F.title, size: 54, color: '#eee', maxWidth: 260 })
+  drawText(ctx, theme.texts.director, 0, 214, { family: F.title, size: 50, color: GOLD, maxWidth: 540, spacing: 3 })
   // clapper bar: hinged at the left, snaps shut
   for (const [y, ang] of [[-120, -0.55 * (1 - snap)], [-120, 0]]) {
     ctx.save()
@@ -135,16 +135,16 @@ function opening(ctx, local, dur, env) {
   clapperboard(ctx, local, theme)
   const tp = prog(local, 1.8, 0.8)
   if (tp > 0) {
-    drawText(ctx, theme.tagline.sub.toUpperCase(), W / 2, 640, { family: F.title, size: 56, color: P.soft, spacing: 10, alpha: tp, maxWidth: 900 })
+    drawText(ctx, theme.texts.sub.toUpperCase(), W / 2, 640, { family: F.title, size: 56, color: P.soft, spacing: 10, alpha: tp, maxWidth: 900 })
     const s = 0.8 + 0.2 * ease.outBack(tp)
     ctx.save()
     ctx.translate(W / 2, 860)
     ctx.scale(s, s)
-    drawText(ctx, theme.tagline.main, 0, 0, { family: F.title, size: 210, color: goldGradient(ctx, 0, 210, t), maxWidth: 900, alpha: tp, shadow: theme.glow, spacing: 6 })
+    drawText(ctx, theme.texts.main, 0, 0, { family: F.title, size: 210, color: goldGradient(ctx, 0, 210, t), maxWidth: 900, alpha: tp, shadow: theme.glow, spacing: 6 })
     ctx.restore()
-    if (theme.tagline.deva) drawText(ctx, theme.tagline.deva, W / 2, 1050, { family: F.deva, size: 110, color: P.heading, alpha: prog(local, 2.3, 0.6), shadow: theme.glow })
+    if (theme.texts.deva) drawText(ctx, theme.texts.deva, W / 2, 1050, { family: F.deva, size: 110, color: P.heading, alpha: prog(local, 2.3, 0.6), shadow: theme.glow })
     divider(ctx, W / 2, 1170, 360, P.accent, ease.outCubic(prog(local, 2.5, 0.7)))
-    drawText(ctx, 'COMING SOON TO YOUR HEARTS', W / 2, 1260, { family: F.title, size: 54, color: P.text, spacing: 8, alpha: prog(local, 2.8, 0.6), maxWidth: 900 })
+    drawText(ctx, theme.texts.comingSoon, W / 2, 1260, { family: F.title, size: 54, color: P.text, spacing: 8, alpha: prog(local, 2.8, 0.6), maxWidth: 900 })
   }
   ctx.restore()
 }
@@ -167,14 +167,28 @@ export default {
   },
   fonts: { title: 'Bebas Neue', script: 'Great Vibes', scriptStyle: 'normal', body: 'Cormorant Garamond', deva: 'Yatra One' },
   glow: { color: 'rgba(242,193,78,.55)', blur: 26 },
-  tagline: { deva: 'शुभ विवाह', main: 'A LOVE STORY', sub: 'Two families proudly present' },
-  ...DEFAULT_TEXT,
-  coupleLine: 'STARRING IN A LIFETIME BLOCKBUSTER',
-  dateHeading: 'Releasing On',
-  timePrefix: 'Show starts at',
-  eventsHeading: 'Show Schedule',
-  photoHeading: 'The Stars',
-  thanks: 'Book your seats!',
+  texts: {
+    main: 'A LOVE STORY',
+    sub: 'Two families proudly present',
+    coupleLine: 'STARRING IN A LIFETIME BLOCKBUSTER',
+    dateHeading: 'Releasing On',
+    timePrefix: 'Show starts at',
+    eventsHeading: 'Show Schedule',
+    photoHeading: 'The Stars',
+    thanks: 'Book your seats!',
+    scene: 'SCENE 1',
+    take: 'TAKE 1',
+    director: 'DIRECTED BY DESTINY',
+    comingSoon: 'COMING SOON TO YOUR HEARTS',
+    starring: 'STARRING',
+  },
+  textLabels: [
+    ['scene', 'Clapperboard: scene'],
+    ['take', 'Clapperboard: take'],
+    ['director', 'Clapperboard: director'],
+    ['comingSoon', 'Opening tagline'],
+    ['starring', 'Stage heading'],
+  ],
   emblem: 'kalash',
   coupleEffect: 'fireworks',
   garland: ['#f59b1a', '#ffc425', '#e8364f'],
@@ -248,7 +262,7 @@ export default {
     ctx.moveTo(STRIP, 210)
     ctx.lineTo(W - STRIP, 210)
     ctx.stroke()
-    drawText(ctx, 'STARRING', W / 2, 300, { family: env.theme.fonts.title, size: 64, color: GOLD, spacing: 14, alpha: prog(local, 0.8, 0.6) })
+    drawText(ctx, env.theme.texts.starring, W / 2, 300, { family: env.theme.fonts.title, size: 64, color: GOLD, spacing: 14, alpha: prog(local, 0.8, 0.6) })
     ctx.restore()
     const sp = prog(local, 1, 0.8)
     spotlight(ctx, 300, 140, 360, archBottom, 240, 0.22 * sp)

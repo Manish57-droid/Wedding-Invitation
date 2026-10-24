@@ -5,6 +5,8 @@ export const SAMPLE_RATE = 48000
 export const MUSIC_STYLES = [
   { id: 'royal', label: 'Royal santoor (Raag Yaman)' },
   { id: 'bhangra', label: 'Upbeat dhol & bhangra' },
+  { id: 'funky', label: 'Funky disco groove' },
+  { id: 'chiptune', label: '8-bit chiptune' },
   { id: 'festive', label: 'Festive dholak & shehnai' },
   { id: 'dreamy', label: 'Dreamy night bells' },
   { id: 'piano', label: 'Soft piano' },
@@ -43,7 +45,8 @@ function reverb(ctx, seconds = 2.6) {
 
 function env(g, time, peak, attack, decay) {
   g.gain.setValueAtTime(0.0001, time)
-  g.gain.exponentialRampToValueAtTime(peak, time + attack)
+  // exponential ramps can't reach 0, so fade-ins that start silent need a floor
+  g.gain.exponentialRampToValueAtTime(Math.max(peak, 0.0001), time + attack)
   g.gain.exponentialRampToValueAtTime(0.0001, time + attack + decay)
 }
 
@@ -264,7 +267,77 @@ export async function generateMusic(style, duration) {
   const rnd = seeded({ royal: 11, festive: 23, dreamy: 37, piano: 51 }[style] || 1)
   const scale = SCALES[style] || SCALES.royal
 
-  if (style === 'bhangra') {
+  if (style === 'funky') {
+    // four-on-the-floor disco: kick, off-beat hats, octave bass, chord stabs
+    const beat = 60 / 116
+    const prog4 = [[0, 4, 7, 11], [-3, 0, 4, 7], [2, 5, 9, 12], [-5, -1, 2, 5]]
+    for (let bar = 0; bar * beat * 4 < duration - 0.5; bar++) {
+      const t0 = 0.3 + bar * beat * 4
+      const ch = prog4[bar % 4]
+      for (let b = 0; b < 4; b++) {
+        const t = t0 + b * beat
+        if (t > duration - 0.5) break
+        drum(ctx, bus, noise, t, 'dhol', bar === 0 ? 0.5 : 0.9)
+        if (bar > 0) {
+          const hat = ctx.createBufferSource()
+          hat.buffer = noise
+          const hp = ctx.createBiquadFilter()
+          hp.type = 'highpass'
+          hp.frequency.value = 7000
+          const hg = ctx.createGain()
+          env(hg, t + beat / 2, 0.12, 0.001, 0.06)
+          hat.connect(hp).connect(hg).connect(bus)
+          hat.start(t + beat / 2, ((t * 2.3) % 0.5), 0.1)
+          if (b % 2 === 1) clap(ctx, bus, noise, t, 0.18)
+          // octave-jumping bass
+          pluck(ctx, bus, t, hz(ch[0] - 24), { gain: 0.22, decay: 0.22, partials: [1], type: 'sawtooth' })
+          pluck(ctx, bus, t + beat / 2, hz(ch[0] - 12), { gain: 0.15, decay: 0.18, partials: [1], type: 'sawtooth' })
+        }
+      }
+      // chord stabs on the off-beats
+      if (bar > 0) for (const b of [1.5, 3.5]) for (const s of ch) pluck(ctx, bus, t0 + b * beat, hz(s), { gain: 0.06, decay: 0.25, partials: [1], type: 'square' })
+      // a catchy lead every other bar
+      if (bar > 1 && bar % 2 === 0) {
+        const lead = melody(SCALES.festive, 8, rnd, 8)
+        lead.forEach((n, i) => n !== null && pluck(ctx, bus, t0 + (i * beat) / 2, hz(n + 12), { gain: 0.07, decay: 0.35, partials: [1, 0.3, 0.15], type: 'triangle', pan: 0.2 }))
+      }
+    }
+  } else if (style === 'chiptune') {
+    // 8-bit: square-wave arpeggios, pulse bass and noise drums
+    const beat = 60 / 132
+    const chords = [[0, 4, 7], [-3, 0, 4], [-7, -3, 0], [-5, -1, 2]]
+    const blip = (t, f, dur, gain, type = 'square') => {
+      const o = ctx.createOscillator()
+      o.type = type
+      o.frequency.value = f
+      const g = ctx.createGain()
+      g.gain.setValueAtTime(gain, t)
+      g.gain.setValueAtTime(gain, t + dur * 0.8)
+      g.gain.linearRampToValueAtTime(0, t + dur)
+      o.connect(g).connect(bus)
+      o.start(t)
+      o.stop(t + dur + 0.02)
+    }
+    const tune = melody(SCALES.piano, 64, rnd, 8)
+    for (let bar = 0; bar * beat * 4 < duration - 0.5; bar++) {
+      const t0 = 0.2 + bar * beat * 4
+      const ch = chords[bar % 4]
+      for (let i = 0; i < 16; i++) {
+        const t = t0 + (i * beat) / 4
+        if (t > duration - 0.4) break
+        blip(t, hz(ch[i % 3] + 12), beat / 4.5, 0.035)
+        if (i % 4 === 0) blip(t, hz(ch[0] - 12), beat * 0.9, 0.06, 'triangle')
+        if (bar > 0 && (i === 0 || i === 8)) drum(ctx, bus, noise, t, 'dhol', 0.6)
+        if (bar > 0 && (i === 4 || i === 12)) drum(ctx, bus, noise, t, 'ta', 0.7)
+      }
+      if (bar > 0) {
+        for (let i = 0; i < 8; i++) {
+          const n = tune[(bar * 8 + i) % tune.length]
+          if (n !== null) blip(t0 + (i * beat) / 2, hz(n + 12), beat * 0.45, 0.05, 'square')
+        }
+      }
+    }
+  } else if (style === 'bhangra') {
     const beat = 60 / 104
     const s16 = beat / 4
     // classic bhangra chaal on the dhol, 16th-note grid

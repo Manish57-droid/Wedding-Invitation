@@ -936,3 +936,37 @@ body {
     width: calc((100svh - 150px) * 9 / 16);
   }
 }
+
+/* template category filter: one swipeable row on phones */
+.cat-filter {
+  margin-bottom: 16px;
+}
+.cat-filter .count {
+  opacity: 0.6;
+  font-size: 12px;
+  margin-left: 2px;
+}
+@media (max-width: 640px) {
+  .cat-filter {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    margin: 0 -12px 14px;
+    padding: 0 12px 4px;
+    scrollbar-width: none;
+  }
+  .cat-filter::-webkit-scrollbar {
+    display: none;
+  }
+  .cat-filter .chip {
+    flex: none;
+  }
+}
+.input .undo {
+  margin-left: 8px;
+  padding: 0;
+  font-size: 12px;
+}
+.input.edited input {
+  border-color: var(--gold);
+  background: #fffaf0;
+}

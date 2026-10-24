@@ -1,14 +1,5 @@
+import { TEXT_LABELS, templateTexts } from '../engine/templates/base.js'
 import { getTemplate } from '../engine/templates/index.js'
-
-const TEXT_FIELDS = [
-  ['main', 'Main title', (t) => t.tagline.main],
-  ['deva', 'Hindi title (clear to hide)', (t) => t.tagline.deva],
-  ['sub', 'Subtitle', (t) => t.tagline.sub],
-  ['coupleLine', 'Line under names', (t) => t.coupleLine],
-  ['dateHeading', 'Date heading', (t) => t.dateHeading],
-  ['eventsHeading', 'Functions heading', (t) => t.eventsHeading],
-  ['thanks', 'Last line', (t) => t.thanks],
-]
 
 const ACCENTS = ['#d4a64a', '#e63946', '#3a86ff', '#ff70a6', '#0f5c46', '#b5835a', '#7b2cbf', '#f2c14e']
 
@@ -46,7 +37,9 @@ function ColorRow({ label, value, fallback, onChange }) {
 
 export default function CustomizePanel({ data, update }) {
   const tpl = getTemplate(data.templateId)
+  const defaults = templateTexts(tpl)
   const custom = data.custom
+  const fields = [...(tpl.textLabels || []), ...TEXT_LABELS].filter(([k]) => k in defaults && !tpl.hideTexts?.includes(k))
   const setCustom = (patch) => update((d) => ({ custom: { ...d.custom, ...patch } }))
   const setText = (k, v) => update((d) => ({ custom: { ...d.custom, texts: { ...d.custom.texts, [k]: v } } }))
   const isOn = ([k, , where]) => (where === 'root' ? !!data[k] : data.scenes?.[k] !== false)
@@ -57,13 +50,10 @@ export default function CustomizePanel({ data, update }) {
       <summary>
         <span>
           <h2>Customise “{tpl.name}”</h2>
-          <small className="muted">Titles, colours and which sections appear</small>
+          <small className="muted">Every text line, colours and which sections appear</small>
         </span>
         <span className="chev" aria-hidden="true">▾</span>
       </summary>
-      <button type="button" className="link-btn reset" onClick={() => update({ custom: { accent: '', heading: '', texts: {} } })}>
-        Reset wording & colours
-      </button>
 
       <div className="field">
         <span className="field-label">Sections in the video</span>
@@ -77,15 +67,29 @@ export default function CustomizePanel({ data, update }) {
         </div>
       </div>
 
+      <div className="card-head">
+        <span className="field-label">Text in the video · empty a box to hide that line</span>
+        <button type="button" className="link-btn" onClick={() => setCustom({ texts: {} })}>
+          Reset text
+        </button>
+      </div>
       <div className="grid-2">
-        {TEXT_FIELDS.map(([k, label, def]) => (
-          <label key={k} className="input">
-            <span>{label}</span>
-            <input
-              value={k === 'deva' ? (custom.texts?.deva ?? tpl.tagline.deva) : (custom.texts?.[k] ?? '')}
-              placeholder={k === 'deva' ? 'e.g. शुभ विवाह (empty = hidden)' : def(tpl)} onChange={(e) => setText(k, e.target.value)} maxLength={k === 'deva' ? 24 : 60} />
-          </label>
-        ))}
+        {fields.map(([k, label]) => {
+          const edited = typeof custom.texts?.[k] === 'string' && custom.texts[k] !== defaults[k]
+          return (
+            <label key={k} className={`input ${edited ? 'edited' : ''}`}>
+              <span>
+                {label}
+                {edited && (
+                  <button type="button" className="link-btn undo" onClick={(e) => (e.preventDefault(), setText(k, defaults[k]))}>
+                    undo
+                  </button>
+                )}
+              </span>
+              <input value={custom.texts?.[k] ?? defaults[k]} placeholder="(hidden)" onChange={(e) => setText(k, e.target.value)} maxLength={70} />
+            </label>
+          )
+        })}
       </div>
 
       <div className="grid-2">

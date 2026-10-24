@@ -5,7 +5,7 @@ import { formatTime, parseDate } from '../format.js'
 import { confetti } from '../particles.js'
 import { SCENES, roundRect } from '../scenes.js'
 import { drawParagraph, drawText } from '../text.js'
-import { DEFAULT_TEXT, H, W } from './base.js'
+import { H, W } from './base.js'
 
 const INK = '#2b2b2b'
 const RED = '#e63946'
@@ -94,7 +94,7 @@ function calendar(ctx, local, dur, env) {
   ctx.save()
   ctx.globalAlpha *= a
 
-  drawText(ctx, theme.dateHeading, W / 2, 230, { family: F.script, size: 120, weight: 700, color: P.heading, reveal: prog(local, 0, 0.8) })
+  drawText(ctx, theme.texts.dateHeading, W / 2, 230, { family: F.script, size: 120, weight: 700, color: P.heading, reveal: prog(local, 0, 0.8) })
   squiggle(ctx, W / 2 - 200, 300, 400, { p: prog(local, 0.5, 0.6), t, color: P.accent, width: 5 })
 
   // calendar card
@@ -166,7 +166,7 @@ function calendar(ctx, local, dur, env) {
       const ax = fromRight ? target[0] + 260 : target[0] - 260
       const ay = Math.min(cy + ch - 60, target[1] + 230)
       doodleArrow(ctx, ax, ay, target[0] + (fromRight ? 70 : -70), target[1] + 60, fromRight ? -60 : 60, { p: ap, t, color: INK, width: 5, seed: 4 })
-      drawText(ctx, 'our big day!', ax, ay + 40, { family: F.script, size: 58, weight: 700, color: BLUE, alpha: ap, maxWidth: 380 })
+      drawText(ctx, theme.texts.bigDay, ax, ay + 40, { family: F.script, size: 58, weight: 700, color: BLUE, alpha: ap, maxWidth: 380 })
     }
   }
   ctx.restore()
@@ -175,7 +175,7 @@ function calendar(ctx, local, dur, env) {
   const vp = prog(local, 2.2, 0.8)
   let y = 1380
   if (data.time) {
-    drawText(ctx, `${theme.timePrefix} ${formatTime(data.time)}`, W / 2, y, { family: F.script, size: 74, weight: 700, color: INK, alpha: vp })
+    drawText(ctx, [theme.texts.timePrefix, formatTime(data.time)].filter(Boolean).join(' '), W / 2, y, { family: F.script, size: 74, weight: 700, color: INK, alpha: vp })
     y += 100
   }
   if (data.venue || data.address) {
@@ -217,12 +217,16 @@ export default {
   },
   fonts: { title: 'Patrick Hand', script: 'Caveat', scriptStyle: 'normal', body: 'Patrick Hand', deva: 'Yatra One' },
   glow: null,
-  tagline: { deva: '', main: "We're getting married!", sub: 'and you are invited to the party' },
-  ...DEFAULT_TEXT,
-  dateHeading: 'Save the Date',
-  timePrefix: 'from',
-  eventsHeading: 'The Plan',
-  thanks: 'Can’t wait to see you!',
+  texts: {
+    deva: '',
+    main: "We're getting married!",
+    sub: 'and you are invited to the party',
+    timePrefix: 'from',
+    eventsHeading: 'The Plan',
+    thanks: 'Can’t wait to see you!',
+    bigDay: 'our big day!',
+  },
+  textLabels: [['bigDay', 'Calendar arrow note']],
   emblem: 'kalash',
   coupleEffect: 'hearts',
   emblemColor: '#e0a526',

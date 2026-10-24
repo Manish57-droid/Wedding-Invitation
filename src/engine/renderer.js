@@ -1,7 +1,7 @@
 import { clamp } from './anim.js'
 import { SCENES, buildTimeline } from './scenes.js'
 import { getTemplate } from './templates/index.js'
-import { H, W } from './templates/base.js'
+import { H, W, templateTexts } from './templates/base.js'
 
 export const VIDEO_W = W
 export const VIDEO_H = H
@@ -12,8 +12,9 @@ export const VIDEO_H = H
  */
 /** Apply the user's text and colour customisations on top of a template's defaults. */
 export function applyCustomization(base, custom = {}) {
-  const tx = custom.texts || {}
-  const pick = (v, d) => (typeof v === 'string' && v.trim() ? v.trim() : d)
+  const texts = { ...templateTexts(base) }
+  // an edited value wins even when empty, so any line can be hidden
+  for (const [k, v] of Object.entries(custom.texts || {})) if (typeof v === 'string') texts[k] = v.trim()
   return {
     ...base,
     palette: {
@@ -21,15 +22,7 @@ export function applyCustomization(base, custom = {}) {
       accent: custom.accent || base.palette.accent,
       heading: custom.heading || base.palette.heading,
     },
-    tagline: {
-      deva: tx.deva === undefined ? base.tagline.deva : tx.deva.trim(),
-      main: pick(tx.main, base.tagline.main),
-      sub: pick(tx.sub, base.tagline.sub),
-    },
-    coupleLine: pick(tx.coupleLine, base.coupleLine),
-    dateHeading: pick(tx.dateHeading, base.dateHeading),
-    eventsHeading: pick(tx.eventsHeading, base.eventsHeading),
-    thanks: pick(tx.thanks, base.thanks),
+    texts,
   }
 }
 
@@ -43,7 +36,7 @@ export function createInvitation(data, assets) {
     const scale = ctx.canvas.width / W
     ctx.save()
     ctx.setTransform(scale, 0, 0, scale, 0, 0)
-    const env = { W, H, t, data, assets, theme }
+    const env = { W, H, t, data, assets, theme, duration }
     theme.background(ctx, t, env)
     theme.particles(ctx, t, env)
 

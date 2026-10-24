@@ -16,6 +16,19 @@ const FONT_SPECS = [
   '700 40px "Caveat"',
   '400 40px "Patrick Hand"',
   '400 40px "Bebas Neue"',
+  '400 40px "Bangers"',
+  '400 40px "Bungee"',
+  '400 40px "Pacifico"',
+  '400 40px "Press Start 2P"',
+  '400 40px "Shrikhand"',
+  '400 40px "Space Mono"',
+  '400 40px "Fredoka"',
+  '400 40px "Poppins"',
+  '700 40px "Space Mono"',
+  '500 40px "Fredoka"',
+  '600 40px "Fredoka"',
+  '700 40px "Fredoka"',
+  '600 40px "Poppins"',
 ]
 
 let fontsReady = null

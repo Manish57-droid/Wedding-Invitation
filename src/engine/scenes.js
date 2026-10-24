@@ -42,8 +42,8 @@ function invocation(ctx, local, dur, env) {
   } else {
     heart(ctx, W / 2, 790, 120 * ease.outBack(prog(local, 0.4, 1)), P.accent)
   }
-  drawText(ctx, '॥ श्री गणेशाय नमः ॥', W / 2, 1210, { family: F.deva, size: 82, color: P.heading, alpha: prog(local, 1, 0.8), shadow: theme.glow })
-  drawText(ctx, 'SHREE GANESHAYA NAMAH', W / 2, 1310, { family: F.title, size: 34, color: P.soft, alpha: prog(local, 1.4, 0.8), spacing: 6 })
+  drawText(ctx, theme.texts.invocation, W / 2, 1210, { family: F.deva, size: 82, color: P.heading, alpha: prog(local, 1, 0.8), shadow: theme.glow })
+  drawText(ctx, theme.texts.invocationLatin, W / 2, 1310, { family: F.title, size: 34, color: P.soft, alpha: prog(local, 1.4, 0.8), spacing: 6 })
   divider(ctx, W / 2, 1380, 280, P.accent, ease.outCubic(prog(local, 1.6, 0.8)))
   ctx.restore()
 }
@@ -72,22 +72,22 @@ function opening(ctx, local, dur, env) {
     ctx.strokeStyle = P.accent
     ctx.stroke()
     const ini = initials(g, b)
-    drawText(ctx, `${ini[0] || ''} & ${ini[1] || ''}`, 0, 6, { family: F.script, size: 110, style: F.scriptStyle, color: P.heading, maxWidth: 230 })
+    drawText(ctx, `${ini[0] || ''} ${theme.texts.amp} ${ini[1] || ''}`, 0, 6, { family: F.script, size: 110, style: F.scriptStyle, color: P.heading, maxWidth: 230 })
     ctx.restore()
   }
-  if (theme.tagline.deva) {
-    drawText(ctx, theme.tagline.deva, W / 2, 1010, { family: F.deva, size: 150, color: P.heading, alpha: prog(local, 1.2, 0.8), shadow: theme.glow })
+  if (theme.texts.deva) {
+    drawText(ctx, theme.texts.deva, W / 2, 1010, { family: F.deva, size: 150, color: P.heading, alpha: prog(local, 1.2, 0.8), shadow: theme.glow })
   }
-  drawText(ctx, theme.tagline.main, W / 2, theme.tagline.deva ? 1150 : 1040, {
-    family: theme.tagline.deva ? F.title : F.script,
-    style: theme.tagline.deva ? 'normal' : F.scriptStyle,
-    size: theme.tagline.deva ? 54 : 120,
-    color: theme.tagline.deva ? P.soft : P.heading,
-    spacing: theme.tagline.deva ? 10 : 0,
+  drawText(ctx, theme.texts.main, W / 2, theme.texts.deva ? 1150 : 1040, {
+    family: theme.texts.deva ? F.title : F.script,
+    style: theme.texts.deva ? 'normal' : F.scriptStyle,
+    size: theme.texts.deva ? 54 : 120,
+    color: theme.texts.deva ? P.soft : P.heading,
+    spacing: theme.texts.deva ? 10 : 0,
     reveal: ease.linear(prog(local, 1.5, 1.1)),
   })
   divider(ctx, W / 2, 1250, 360, P.accent, ease.outCubic(prog(local, 2, 0.8)))
-  drawText(ctx, theme.tagline.sub, W / 2, 1340, { family: F.body, size: 46, style: 'italic', color: P.text, alpha: prog(local, 2.3, 0.8) })
+  drawText(ctx, theme.texts.sub, W / 2, 1340, { family: F.body, size: 46, style: 'italic', color: P.text, alpha: prog(local, 2.3, 0.8) })
   ctx.restore()
 }
 
@@ -121,6 +121,7 @@ function couple(ctx, local, dur, env) {
   }
   ctx.restore()
   theme.stageFront(ctx, archBottom, t, env)
+  theme.coupleOverlay?.(ctx, local, env, archBottom)
 
   // celebration burst once the garlands land
   const bp = prog(local, 2.8, 2.2)
@@ -145,9 +146,9 @@ function couple(ctx, local, dur, env) {
   // names
   const np = prog(local, 1.4, 1.2)
   drawText(ctx, g, W / 2, 1400, { family: F.script, style: F.scriptStyle, size: 120, color: P.heading, reveal: np, shadow: theme.glow, maxWidth: 900 })
-  drawText(ctx, '&', W / 2, 1515, { family: F.script, style: F.scriptStyle, size: 90, color: P.accent, alpha: prog(local, 2, 0.6) })
+  drawText(ctx, theme.texts.amp, W / 2, 1515, { family: F.script, style: F.scriptStyle, size: 90, color: P.accent, alpha: prog(local, 2, 0.6) })
   drawText(ctx, b, W / 2, 1630, { family: F.script, style: F.scriptStyle, size: 120, color: P.heading, reveal: prog(local, 2.2, 1.2), shadow: theme.glow, maxWidth: 900 })
-  drawText(ctx, theme.coupleLine, W / 2, 1760, { family: F.title, size: 38, color: P.soft, alpha: prog(local, 3.2, 0.8), spacing: 6 })
+  drawText(ctx, theme.texts.coupleLine, W / 2, 1760, { family: F.title, size: 38, color: P.soft, alpha: prog(local, 3.2, 0.8), spacing: 6 })
   ctx.restore()
 }
 
@@ -168,7 +169,7 @@ function families(ctx, local, dur, env) {
   }
   let y = 700
   if (data.blessings?.trim()) {
-    drawText(ctx, 'WITH THE BLESSINGS OF', W / 2, y, { family: F.title, size: 32, color: P.soft, spacing: 5, alpha: prog(local, 0.5, 0.6) })
+    drawText(ctx, theme.texts.blessingsLabel, W / 2, y, { family: F.title, size: 32, color: P.soft, spacing: 5, alpha: prog(local, 0.5, 0.6) })
     y = drawParagraph(ctx, data.blessings, W / 2, y + 60, { family: F.body, size: 46, style: 'italic', color: P.text, alpha: prog(local, 0.7, 0.6) }) + 20
   }
   divider(ctx, W / 2, y, 260, P.accent, ease.outCubic(prog(local, 0.8, 0.8)))
@@ -178,7 +179,7 @@ function families(ctx, local, dur, env) {
   if (gp || bp) {
     if (gp) y = drawParagraph(ctx, gp, W / 2, y, { family: F.title, size: 48, weight: 600, color: P.heading, alpha: prog(local, 1, 0.6) })
     if (gp && bp) {
-      drawText(ctx, '&', W / 2, y + 10, { family: F.script, style: F.scriptStyle, size: 70, color: P.accent, alpha: prog(local, 1.2, 0.6) })
+      drawText(ctx, theme.texts.amp, W / 2, y + 10, { family: F.script, style: F.scriptStyle, size: 70, color: P.accent, alpha: prog(local, 1.2, 0.6) })
       y += 90
     }
     if (bp) y = drawParagraph(ctx, bp, W / 2, y, { family: F.title, size: 48, weight: 600, color: P.heading, alpha: prog(local, 1.4, 0.6) })
@@ -187,7 +188,7 @@ function families(ctx, local, dur, env) {
   y = drawParagraph(ctx, data.inviteLine?.trim() || 'request the pleasure of your company at the wedding of', W / 2, y, {
     family: F.body, size: 46, style: 'italic', color: P.text, maxWidth: 820, alpha: prog(local, 1.7, 0.7),
   })
-  drawText(ctx, `${g} & ${b}`, W / 2, y + 90, { family: F.script, style: F.scriptStyle, size: 110, color: P.heading, reveal: prog(local, 2.1, 1.2), shadow: theme.glow, maxWidth: 940 })
+  drawText(ctx, `${g} ${theme.texts.amp} ${b}`, W / 2, y + 90, { family: F.script, style: F.scriptStyle, size: 110, color: P.heading, reveal: prog(local, 2.1, 1.2), shadow: theme.glow, maxWidth: 940 })
   ctx.restore()
 }
 
@@ -200,7 +201,7 @@ function dateVenue(ctx, local, dur, env) {
   ctx.save()
   ctx.globalAlpha *= a
   ctx.translate(0, dy)
-  drawText(ctx, theme.dateHeading, W / 2, 380, { family: F.script, style: F.scriptStyle, size: 110, color: P.heading, reveal: prog(local, 0.2, 1), shadow: theme.glow })
+  drawText(ctx, theme.texts.dateHeading, W / 2, 380, { family: F.script, style: F.scriptStyle, size: 110, color: P.heading, reveal: prog(local, 0.2, 1), shadow: theme.glow })
   divider(ctx, W / 2, 470, 300, P.accent, ease.outCubic(prog(local, 0.6, 0.8)))
   if (d) {
     const cp = ease.outBack(prog(local, 0.7, 0.9))
@@ -223,7 +224,7 @@ function dateVenue(ctx, local, dur, env) {
     ctx.restore()
   }
   if (data.time) {
-    drawText(ctx, `${theme.timePrefix} ${formatTime(data.time)}`, W / 2, 920, { family: F.body, size: 50, style: 'italic', color: P.text, alpha: prog(local, 1.3, 0.6) })
+    drawText(ctx, [theme.texts.timePrefix, formatTime(data.time)].filter(Boolean).join(' '), W / 2, 920, { family: F.body, size: 50, style: 'italic', color: P.text, alpha: prog(local, 1.3, 0.6) })
   }
   // venue card
   const vp = ease.outCubic(prog(local, 1.6, 0.9))
@@ -238,7 +239,7 @@ function dateVenue(ctx, local, dur, env) {
     ctx.lineWidth = 3
     ctx.stroke()
     pin(ctx, W / 2, 1120, P.accent)
-    drawText(ctx, 'VENUE', W / 2, 1200, { family: F.title, size: 34, color: P.soft, spacing: 8 })
+    drawText(ctx, theme.texts.venueLabel, W / 2, 1200, { family: F.title, size: 34, color: P.soft, spacing: 8 })
     let y = drawParagraph(ctx, data.venue || '', W / 2, 1280, { family: F.title, size: 56, weight: 600, color: P.heading, maxWidth: 760 })
     drawParagraph(ctx, data.address || '', W / 2, y + 10, { family: F.body, size: 42, color: P.text, maxWidth: 760 })
     ctx.restore()
@@ -255,7 +256,7 @@ function events(ctx, local, dur, env) {
   ctx.save()
   ctx.globalAlpha *= a
   ctx.translate(0, dy)
-  drawText(ctx, theme.eventsHeading, W / 2, 330, { family: F.script, style: F.scriptStyle, size: 104, color: P.heading, reveal: prog(local, 0.1, 1), shadow: theme.glow })
+  drawText(ctx, theme.texts.eventsHeading, W / 2, 330, { family: F.script, style: F.scriptStyle, size: 104, color: P.heading, reveal: prog(local, 0.1, 1), shadow: theme.glow })
   divider(ctx, W / 2, 420, 300, P.accent, ease.outCubic(prog(local, 0.5, 0.8)))
   const top = 490
   const avail = 1720 - top
@@ -304,7 +305,7 @@ function photos(ctx, local, dur, env) {
   ctx.save()
   ctx.globalAlpha *= a
   ctx.translate(0, dy)
-  drawText(ctx, theme.photoHeading, W / 2, 470, { family: F.script, style: F.scriptStyle, size: 100, color: P.heading, reveal: prog(local, 0.1, 1), shadow: theme.glow })
+  drawText(ctx, theme.texts.photoHeading, W / 2, 470, { family: F.script, style: F.scriptStyle, size: 100, color: P.heading, reveal: prog(local, 0.1, 1), shadow: theme.glow })
   const items = [
     ['groom', g, W / 2 - 220, -1],
     ['bride', b, W / 2 + 220, 1],
@@ -336,7 +337,7 @@ function photos(ctx, local, dur, env) {
     drawText(ctx, name, x, 1190, { family: F.script, style: F.scriptStyle, size: 84, color: P.heading, alpha: prog(local, 1 + i * 0.3, 0.6), maxWidth: 420 })
   })
   heart(ctx, W / 2, 920, 90 * ease.outElastic(prog(local, 1.2, 1.2)), P.heart)
-  drawText(ctx, theme.photoLine, W / 2, 1360, { family: F.body, size: 48, style: 'italic', color: P.text, alpha: prog(local, 1.6, 0.8) })
+  drawText(ctx, theme.texts.photoLine, W / 2, 1360, { family: F.body, size: 48, style: 'italic', color: P.text, alpha: prog(local, 1.6, 0.8) })
   ctx.restore()
 }
 
@@ -365,16 +366,17 @@ function closing(ctx, local, dur, env) {
     y += 100
   }
   if (data.rsvp?.trim()) {
-    drawText(ctx, 'RSVP', W / 2, y, { family: F.title, size: 34, color: P.soft, spacing: 8, alpha: prog(local, 1.7, 0.6) })
+    drawText(ctx, theme.texts.rsvpLabel, W / 2, y, { family: F.title, size: 34, color: P.soft, spacing: 8, alpha: prog(local, 1.7, 0.6) })
     drawParagraph(ctx, data.rsvp, W / 2, y + 64, { family: F.body, size: 44, color: P.text, maxWidth: 860, alpha: prog(local, 1.9, 0.6) })
   }
-  drawText(ctx, theme.thanks, W / 2, 1780, { family: F.script, style: F.scriptStyle, size: 80, color: P.heading, reveal: prog(local, 2.4, 1) })
+  drawText(ctx, theme.texts.thanks, W / 2, 1780, { family: F.script, style: F.scriptStyle, size: 80, color: P.heading, reveal: prog(local, 2.4, 1) })
   ctx.restore()
 }
 
 // ---------------------------------------------------------------------------
 
 export function roundRect(ctx, x, y, w, h, r) {
+  r = Math.max(0, Math.min(r, Math.abs(w) / 2, Math.abs(h) / 2))
   ctx.beginPath()
   ctx.moveTo(x + r, y)
   ctx.arcTo(x + w, y, x + w, y + h, r)

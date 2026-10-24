@@ -42,6 +42,59 @@ export function goldLedge(ctx, y, gold) {
   ctx.fillRect(W / 2 - 470, y - 4, 940, 30)
 }
 
+/**
+ * Every piece of text a video shows (other than the couple's own details) lives here,
+ * so users can edit all of it. Templates override defaults via `texts` and may add
+ * their own keys, labelled through `textLabels`.
+ */
+export const DEFAULT_TEXTS = {
+  invocation: '॥ श्री गणेशाय नमः ॥',
+  invocationLatin: 'SHREE GANESHAYA NAMAH',
+  deva: 'शुभ विवाह',
+  main: 'SHUBH VIVAH',
+  sub: 'Two souls, one sacred bond',
+  amp: '&',
+  coupleLine: 'ARE GETTING MARRIED',
+  blessingsLabel: 'WITH THE BLESSINGS OF',
+  dateHeading: 'Save the Date',
+  timePrefix: 'Muhurat at',
+  venueLabel: 'VENUE',
+  eventsHeading: 'Celebrations',
+  photoHeading: 'The Couple',
+  photoLine: 'Two hearts, one beautiful journey',
+  rsvpLabel: 'RSVP',
+  thanks: 'See you there!',
+}
+
+export const TEXT_LABELS = [
+  ['invocation', 'Invocation (Hindi)'],
+  ['invocationLatin', 'Invocation (English)'],
+  ['deva', 'Hindi title'],
+  ['main', 'Main title'],
+  ['sub', 'Subtitle'],
+  ['amp', 'Between names'],
+  ['coupleLine', 'Line under names'],
+  ['blessingsLabel', 'Blessings label'],
+  ['dateHeading', 'Date heading'],
+  ['timePrefix', 'Before the time'],
+  ['venueLabel', 'Venue label'],
+  ['eventsHeading', 'Functions heading'],
+  ['photoHeading', 'Photos heading'],
+  ['photoLine', 'Photos caption'],
+  ['rsvpLabel', 'RSVP label'],
+  ['thanks', 'Last line'],
+]
+
+/** Template default texts, including older templates that set them as top-level props. */
+export function templateTexts(tpl) {
+  const legacy = {}
+  if (tpl.tagline) Object.assign(legacy, { main: tpl.tagline.main, deva: tpl.tagline.deva, sub: tpl.tagline.sub })
+  for (const k of ['coupleLine', 'dateHeading', 'timePrefix', 'eventsHeading', 'photoHeading', 'photoLine', 'thanks']) {
+    if (tpl[k] !== undefined) legacy[k] = tpl[k]
+  }
+  return { ...DEFAULT_TEXTS, ...legacy, ...tpl.texts }
+}
+
 export const DEFAULT_TEXT = {
   coupleLine: 'ARE GETTING MARRIED',
   dateHeading: 'Save the Date',

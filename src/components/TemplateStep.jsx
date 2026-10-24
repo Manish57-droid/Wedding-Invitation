@@ -1,5 +1,5 @@
-import { useEffect, useRef } from 'react'
-import { TEMPLATES } from '../engine/templates/index.js'
+import { useEffect, useRef, useState } from 'react'
+import { CATEGORIES, TEMPLATES } from '../engine/templates/index.js'
 import { useInvitation } from '../hooks/useInvitation.js'
 import CustomizePanel from './CustomizePanel.jsx'
 
@@ -72,14 +72,23 @@ function TemplateCard({ template, data, selected, onSelect }) {
 }
 
 export default function TemplateStep({ data, update }) {
+  const [cat, setCat] = useState('all')
+  const shown = TEMPLATES.filter((t) => cat === 'all' || t.category === cat)
   return (
     <section>
       <div className="section-head">
         <h1>Choose your invitation style</h1>
         <p>Every template turns your photos into cartoon avatars and animates your details into a video ready for WhatsApp and Instagram.</p>
       </div>
+      <div className="chips cat-filter" role="tablist">
+        {CATEGORIES.map(([id, label]) => (
+          <button key={id} type="button" role="tab" aria-selected={cat === id} className={`chip ${cat === id ? 'on' : ''}`} onClick={() => setCat(id)}>
+            {label} <span className="count">{id === 'all' ? TEMPLATES.length : TEMPLATES.filter((t) => t.category === id).length}</span>
+          </button>
+        ))}
+      </div>
       <div className="template-grid">
-        {TEMPLATES.map((t) => (
+        {shown.map((t) => (
           <TemplateCard
             key={t.id}
             template={t}
