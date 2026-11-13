@@ -1,11 +1,11 @@
 import { rgba } from '../lib/color.js'
 import { clamp, ease, fadeWindow, prog, rnd } from './anim.js'
 import { drawAvatar, drawAvatarMedallion, drawVarmala } from './avatarDraw.js'
-import { dateParts, eventIcon, formatTime, initials, shortDate } from './format.js'
+import { activeEvents, dateParts, eventIcon, eventStyle, formatTime, initials, longDate, shortDate } from './format.js'
+import { drawEmoji } from './emoji.js'
 import { divider, firework, heart, kalash, mandala } from './ornaments.js'
 import { drawParagraph, drawText } from './text.js'
 
-const EMOJI_FONT = '"Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",sans-serif'
 
 function names(data) {
   return { g: data.groom?.name?.trim() || 'Groom', b: data.bride?.name?.trim() || 'Bride' }
@@ -252,7 +252,7 @@ function events(ctx, local, dur, env) {
   const { a, dy } = enter(local, dur)
   const P = theme.palette
   const F = theme.fonts
-  const list = (data.events || []).filter((e) => e.name?.trim()).slice(0, 6)
+  const list = activeEvents(data).slice(0, 6)
   ctx.save()
   ctx.globalAlpha *= a
   ctx.translate(0, dy)
@@ -281,11 +281,7 @@ function events(ctx, local, dur, env) {
     ctx.arc(200, cy, cardH * 0.33, 0, Math.PI * 2)
     ctx.fillStyle = rgba(P.accent, 0.18)
     ctx.fill()
-    ctx.font = `${Math.round(cardH * 0.34)}px ${EMOJI_FONT}`
-    ctx.textAlign = 'center'
-    ctx.textBaseline = 'middle'
-    ctx.fillStyle = '#000'
-    ctx.fillText(eventIcon(ev.name), 200, cy + 3)
+    drawEmoji(ctx, ev.emoji?.trim() || eventIcon(ev.name), 200, cy + 3, cardH * 0.34)
     const big = cardH > 170
     drawText(ctx, ev.name, 300, cy - cardH * (ev.venue ? 0.24 : 0.16), { family: F.title, size: big ? 52 : 42, weight: 700, color: P.heading, align: 'left', maxWidth: 620 })
     const when = [shortDate(ev.date), formatTime(ev.time)].filter(Boolean).join('  •  ')
@@ -293,6 +289,140 @@ function events(ctx, local, dur, env) {
     if (ev.venue) drawText(ctx, ev.venue, 300, cy + cardH * 0.24, { family: F.body, size: big ? 36 : 30, style: 'italic', color: P.soft, align: 'left', maxWidth: 620 })
     ctx.restore()
   })
+  ctx.restore()
+}
+
+const emojiAt = drawEmoji
+
+/** One full page per function (Haldi, Mehendi, …) with its own emoji, colour, note and photo. */
+function eventPage(ctx, local, dur, env, scene) {
+  const { W, H, theme, data, assets, t } = env
+  const list = activeEvents(data)
+  const ev = list[scene.index]
+  if (!ev) return
+  const { a, dy } = enter(local, dur)
+  const P = theme.palette
+  const F = theme.fonts
+  const style = eventStyle(ev.name)
+  const icon = ev.emoji?.trim() || style.icon
+  const img = assets.eventImages?.[scene.index]
+  ctx.save()
+  ctx.globalAlpha *= a
+
+  // themed emoji drifting down behind everything
+  for (let i = 0; i < 12; i++) {
+    const y = ((rnd(i, scene.index + 21) * (H + 200) + local * (90 + rnd(i, 3) * 70)) % (H + 200)) - 100
+    const x = rnd(i, scene.index + 7) * W + Math.sin(t + i) * 30
+    emojiAt(ctx, style.emojis[i % style.emojis.length], x, y, 44 + rnd(i, 9) * 30, 0.35)
+  }
+  ctx.translate(0, dy)
+
+  drawText(ctx, theme.texts.eventKicker, W / 2, 310, { family: F.title, size: 40, color: P.soft, spacing: 8, alpha: prog(local, 0.1, 0.5), maxWidth: 900 })
+
+  // hero visual: uploaded photo, or a glowing emoji medallion with orbiting emojis
+  const cy = 770
+  const pop = ease.outBack(prog(local, 0.2, 0.8))
+  const glow = ctx.createRadialGradient(W / 2, cy, 40, W / 2, cy, 460)
+  glow.addColorStop(0, rgba(style.color, 0.55))
+  glow.addColorStop(1, rgba(style.color, 0))
+  ctx.fillStyle = glow
+  ctx.fillRect(0, cy - 460, W, 920)
+  if (pop > 0) {
+    ctx.save()
+    ctx.translate(W / 2, cy)
+    ctx.scale(pop, pop)
+    if (img) {
+      const s = 560
+      ctx.rotate(-0.03)
+      ctx.fillStyle = '#fff'
+      ctx.shadowColor = 'rgba(0,0,0,.25)'
+      ctx.shadowBlur = 30
+      roundRect(ctx, -s / 2 - 18, -s / 2 - 18, s + 36, s + 36, 34)
+      ctx.fill()
+      ctx.shadowColor = 'transparent'
+      ctx.save()
+      roundRect(ctx, -s / 2, -s / 2, s, s, 24)
+      ctx.clip()
+      // cover-fit the photo into the square
+      const k = Math.max(s / img.width, s / img.height)
+      ctx.drawImage(img, -img.width * k / 2, -img.height * k / 2, img.width * k, img.height * k)
+      ctx.restore()
+      ctx.beginPath()
+      ctx.arc(s / 2 - 10, s / 2 - 10, 80, 0, Math.PI * 2)
+      ctx.fillStyle = P.medallion
+      ctx.fill()
+      ctx.lineWidth = 6
+      ctx.strokeStyle = P.accent
+      ctx.stroke()
+      emojiAt(ctx, icon, s / 2 - 10, s / 2 - 6, 96)
+    } else {
+      for (let i = 0; i < 8; i++) {
+        const ang = (i / 8) * Math.PI * 2 + t * 0.5
+        emojiAt(ctx, style.emojis[i % style.emojis.length], Math.cos(ang) * 330, Math.sin(ang) * 330, 70)
+      }
+      ctx.beginPath()
+      ctx.arc(0, 0, 230, 0, Math.PI * 2)
+      ctx.fillStyle = P.medallion
+      ctx.fill()
+      ctx.lineWidth = 10
+      ctx.strokeStyle = P.accent
+      ctx.stroke()
+      ctx.beginPath()
+      ctx.arc(0, 0, 205, 0, Math.PI * 2)
+      ctx.lineWidth = 3
+      ctx.strokeStyle = rgba(style.color, 0.8)
+      ctx.stroke()
+      const bounce = 1 + Math.sin(t * 3) * 0.05
+      emojiAt(ctx, icon, 0, 10, 250 * bounce)
+    }
+    ctx.restore()
+  }
+
+  drawText(ctx, ev.name, W / 2, 1215, { family: F.script, style: F.scriptStyle, size: 150, color: P.heading, reveal: prog(local, 0.6, 0.8), shadow: theme.glow, maxWidth: 940 })
+  divider(ctx, W / 2, 1320, 300, P.accent, ease.outCubic(prog(local, 0.9, 0.6)))
+  let y = 1405
+  const when = longDate(ev.date)
+  if (when) {
+    drawText(ctx, when, W / 2, y, { family: F.title, size: 58, weight: 700, color: P.heading, alpha: prog(local, 1, 0.5), maxWidth: 920 })
+    y += 84
+  }
+  if (ev.time) {
+    drawText(ctx, `🕖 ${formatTime(ev.time)}`, W / 2, y, { family: F.body, size: 50, color: P.text, alpha: prog(local, 1.2, 0.5) })
+    y += 84
+  }
+  if (ev.venue?.trim()) {
+    y = drawParagraph(ctx, `📍 ${ev.venue.trim()}`, W / 2, y, { family: F.body, size: 46, color: P.text, maxWidth: 860, alpha: prog(local, 1.4, 0.5) }) + 20
+  }
+  if (ev.note?.trim()) {
+    const np = ease.outBack(prog(local, 1.7, 0.6))
+    if (np > 0) {
+      ctx.save()
+      ctx.translate(W / 2, y + 50)
+      ctx.scale(np, np)
+      ctx.font = `600 44px "${F.body}", sans-serif`
+      const w = Math.min(920, ctx.measureText(ev.note.trim()).width + 100)
+      roundRect(ctx, -w / 2, -52, w, 104, 52)
+      ctx.fillStyle = P.card
+      ctx.fill()
+      ctx.lineWidth = 3
+      ctx.strokeStyle = rgba(style.color, 0.9)
+      ctx.stroke()
+      drawText(ctx, ev.note.trim(), 0, 2, { family: F.body, size: 44, weight: 600, color: P.text, maxWidth: w - 60 })
+      ctx.restore()
+    }
+  }
+
+  // page dots: which function out of how many
+  if (list.length > 1) {
+    const gap = 34
+    const x0 = W / 2 - ((list.length - 1) * gap) / 2
+    list.forEach((_, i) => {
+      ctx.beginPath()
+      ctx.arc(x0 + i * gap, 1790, i === scene.index ? 11 : 7, 0, Math.PI * 2)
+      ctx.fillStyle = i === scene.index ? P.accent : rgba(P.accent, 0.35)
+      ctx.fill()
+    })
+  }
   ctx.restore()
 }
 
@@ -401,7 +531,7 @@ function pin(ctx, x, y, color) {
   ctx.restore()
 }
 
-export const SCENES = { invocation, opening, couple, families, dateVenue, events, photos, closing }
+export const SCENES = { invocation, opening, couple, families, dateVenue, events, event: eventPage, photos, closing }
 
 /** Build the scene list for this invitation; scenes overlap slightly for cross-fades. */
 export function buildTimeline(data, theme, assets) {
@@ -412,14 +542,18 @@ export function buildTimeline(data, theme, assets) {
   list.push(['couple', 7.2])
   if (on('families') && (data.groom?.parents || data.bride?.parents || data.blessings)) list.push(['families', 6])
   if (on('dateVenue') && (data.date || data.venue)) list.push(['dateVenue', 6.5])
-  const evCount = (data.events || []).filter((e) => e.name?.trim()).length
-  if (on('events') && evCount) list.push(['events', 2.6 + Math.min(evCount, 6) * 0.9])
+  const evs = activeEvents(data)
+  if (on('events') && evs.length) {
+    // one page per function, or the older single summary page
+    if (data.eventLayout === 'list') list.push(['events', 2.6 + Math.min(evs.length, 6) * 0.9])
+    else evs.forEach((_, i) => list.push(['event', 4.4, i]))
+  }
   if (data.includePhotos && (assets?.photos?.groom || assets?.photos?.bride)) list.push(['photos', 5])
   list.push(['closing', 6.5])
   const overlap = 0.5
   let start = 0
-  const scenes = list.map(([id, dur]) => {
-    const s = { id, start, dur }
+  const scenes = list.map(([id, dur, index]) => {
+    const s = { id, start, dur, index }
     start += dur - overlap
     return s
   })

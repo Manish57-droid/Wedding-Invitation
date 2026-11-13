@@ -44,7 +44,7 @@ export function createInvitation(data, assets) {
       const local = t - s.start
       if (local < 0 || local > s.dur || s.id === 'invocation') continue
       ctx.save()
-      sceneFn(s.id)(ctx, local, s.dur, env)
+      sceneFn(s.id)(ctx, local, s.dur, env, s)
       ctx.restore()
     }
     // doors / curtains stay closed until the opening scene, so the invocation sits on top of them

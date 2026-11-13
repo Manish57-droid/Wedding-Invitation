@@ -2,11 +2,12 @@
 import { rgba, shade } from '../../lib/color.js'
 import { clamp, ease, prog, rnd } from '../anim.js'
 import { roundRect } from '../scenes.js'
+import { drawEmoji } from '../emoji.js'
 import { drawText } from '../text.js'
 import { H, W } from './base.js'
 
 const TAU = Math.PI * 2
-export const EMOJI_FONT = '"Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",sans-serif'
+export { EMOJI_FONT } from '../emoji.js'
 
 export const CARD = { x: 90, y: 240, w: W - 180, r: 48 }
 
@@ -63,30 +64,16 @@ export function closingBand(ctx, y, color, accent) {
 
 /** Emoji drifting upwards (reactions, sparkles). */
 export function emojiFloat(ctx, t, emojis, { count = 14, seed = 3, size = 54, alpha = 0.9, speed = 70 } = {}) {
-  ctx.save()
-  ctx.globalAlpha *= alpha
-  ctx.textAlign = 'center'
-  ctx.textBaseline = 'middle'
   for (let i = 0; i < count; i++) {
     const sp = speed * (0.6 + rnd(i, seed) * 0.8)
     const y = H + 80 - ((rnd(i, seed + 1) * (H + 160) + t * sp) % (H + 160))
     const x = rnd(i, seed + 2) * W + Math.sin(t * 1.3 + i) * 30
     const s = size * (0.6 + rnd(i, seed + 3) * 0.7)
-    ctx.font = `${Math.round(s)}px ${EMOJI_FONT}`
-    ctx.fillText(emojis[i % emojis.length], x, y)
+    drawEmoji(ctx, emojis[i % emojis.length], x, y, s, alpha)
   }
-  ctx.restore()
 }
 
-export function emoji(ctx, e, x, y, size, alpha = 1) {
-  ctx.save()
-  ctx.globalAlpha *= alpha
-  ctx.font = `${Math.round(size)}px ${EMOJI_FONT}`
-  ctx.textAlign = 'center'
-  ctx.textBaseline = 'middle'
-  ctx.fillText(e, x, y)
-  ctx.restore()
-}
+export const emoji = drawEmoji
 
 /** Comic-style spiky burst. */
 export function starburst(ctx, x, y, r, { points = 14, fill = '#ffd60a', stroke = '#111', rot = 0, inner = 0.68, lineWidth = 8 } = {}) {

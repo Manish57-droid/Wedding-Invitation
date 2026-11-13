@@ -1,4 +1,5 @@
 import { buildAvatarSvg } from '../avatar/buildAvatarSvg.js'
+import { activeEvents } from './format.js'
 
 const FONT_SPECS = [
   '400 40px "Cinzel"',
@@ -89,5 +90,23 @@ export async function loadAssets(data) {
     avatars[who] = { open, blink }
     if (data[who].photo) photos[who] = await loadImage(data[who].photo).catch(() => null)
   }
-  return { avatars, photos }
+  // optional photo per function page, indexed like activeEvents()
+  const eventImages = await Promise.all(activeEvents(data).map((e) => (e.image ? loadImage(e.image).catch(() => null) : null)))
+  return { avatars, photos, eventImages }
+}
+
+/** Shrink an uploaded photo to a JPEG data URL small enough to keep in browser storage. */
+export async function compressImage(file, maxSide = 900, quality = 0.82) {
+  const url = URL.createObjectURL(file)
+  try {
+    const img = await loadImage(url)
+    const k = Math.min(1, maxSide / Math.max(img.naturalWidth, img.naturalHeight))
+    const c = document.createElement('canvas')
+    c.width = Math.round(img.naturalWidth * k)
+    c.height = Math.round(img.naturalHeight * k)
+    c.getContext('2d').drawImage(img, 0, 0, c.width, c.height)
+    return c.toDataURL('image/jpeg', quality)
+  } finally {
+    URL.revokeObjectURL(url)
+  }
 }

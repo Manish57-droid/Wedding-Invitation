@@ -1,4 +1,15 @@
+import { useRef, useState } from 'react'
+import { compressImage } from '../engine/assets.js'
+import { MAX_EVENTS, eventStyle } from '../engine/format.js'
 import { addDays } from '../state.js'
+
+const NOTE_HINTS = {
+  '🌼': 'e.g. Dress code: Yellow 💛',
+  '🌿': 'e.g. Wear green 💚 · Mehendi artist on site',
+  '🎶': "e.g. Come ready to dance 💃",
+  '💞': 'e.g. Pheras at 9 PM sharp 🔥',
+  '🥂': 'e.g. Dinner & DJ till late 🎉',
+}
 
 const EVENT_SUGGESTIONS = ['Haldi', 'Mehendi', 'Sangeet', 'Engagement', 'Wedding', 'Baraat', 'Reception', 'Cocktail', 'Puja', 'Tilak', 'Roka']
 
@@ -18,6 +29,85 @@ function Input({ label, hint, ...props }) {
       {props.rows ? <textarea {...props} /> : <input {...props} />}
       {hint && <small>{hint}</small>}
     </label>
+  )
+}
+
+/** One function: basic fields always visible, page extras (emoji, note, photo) behind a toggle. */
+function EventCard({ ev, onChange, onUp, onDown, onRemove, showExtras }) {
+  const [open, setOpen] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const fileRef = useRef(null)
+  const style = eventStyle(ev.name)
+  const icon = ev.emoji?.trim() || style.icon
+
+  const onPhoto = async (file) => {
+    if (!file) return
+    setBusy(true)
+    try {
+      onChange({ image: await compressImage(file) })
+    } catch {
+      alert("Couldn't read that image. Try a JPG or PNG.")
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className="event-card">
+      <div className="event-row">
+        <span className="ev-icon" aria-hidden="true">{icon}</span>
+        <input className="ev-name" value={ev.name} onChange={(e) => onChange({ name: e.target.value })} placeholder="Function name" maxLength={28} aria-label="Function name" />
+        <input type="date" value={ev.date} onChange={(e) => onChange({ date: e.target.value })} aria-label="Function date" />
+        <input type="time" value={ev.time} onChange={(e) => onChange({ time: e.target.value })} aria-label="Function time" />
+        <input className="ev-venue" value={ev.venue} onChange={(e) => onChange({ venue: e.target.value })} placeholder="Venue (optional)" maxLength={50} aria-label="Function venue" />
+        <div className="ev-actions">
+          <button type="button" className="icon-btn" onClick={onUp} aria-label="Move up">↑</button>
+          <button type="button" className="icon-btn" onClick={onDown} aria-label="Move down">↓</button>
+          <button type="button" className="icon-btn danger" onClick={onRemove} aria-label="Remove function">✕</button>
+        </div>
+      </div>
+      {showExtras && (
+        <>
+          <button type="button" className="link-btn ev-more" onClick={() => setOpen((v) => !v)}>
+            {open ? '▾ Hide page extras' : `▸ Page extras: emoji, note${ev.note ? ' ✓' : ''}, photo${ev.image ? ' ✓' : ''}`}
+          </button>
+          {open && (
+            <div className="ev-extras">
+              <div className="field">
+                <span className="field-label">Emoji for this page</span>
+                <div className="chips">
+                  {[...new Set([style.icon, ...style.emojis, '🎉', '💖', '🪔', '🌸'])].map((e) => (
+                    <button key={e} type="button" className={`chip emoji-chip ${icon === e ? 'on' : ''}`} onClick={() => onChange({ emoji: e })}>
+                      {e}
+                    </button>
+                  ))}
+                  <input className="emoji-input" value={ev.emoji || ''} onChange={(e) => onChange({ emoji: e.target.value })} placeholder="or type any" maxLength={4} aria-label="Custom emoji" />
+                </div>
+              </div>
+              <label className="input">
+                <span>Note on this page (dress code, theme, food…)</span>
+                <input value={ev.note || ''} onChange={(e) => onChange({ note: e.target.value })} placeholder={NOTE_HINTS[style.icon] || 'e.g. Dress code: Pastels ✨'} maxLength={48} />
+              </label>
+              <div className="field">
+                <span className="field-label">Photo for this page (optional, replaces the big emoji)</span>
+                <div className="ev-photo">
+                  {ev.image && <img src={ev.image} alt={`${ev.name} photo`} />}
+                  <input ref={fileRef} type="file" accept="image/*" hidden onChange={(e) => onPhoto(e.target.files?.[0])} />
+                  <button type="button" className="btn ghost small" onClick={() => fileRef.current?.click()} disabled={busy}>
+                    {busy ? 'Adding…' : ev.image ? 'Change photo' : '📷 Add photo'}
+                  </button>
+                  {ev.image && (
+                    <button type="button" className="link-btn" onClick={() => onChange({ image: null })}>
+                      Remove
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+    </div>
   )
 }
 
@@ -81,7 +171,7 @@ export default function DetailsStep({ data, update }) {
       <div className="card">
         <div className="card-head">
           <h2>Functions</h2>
-          <span className="muted">{data.events.length ? `${Math.min(data.events.length, 6)} shown in video` : 'No functions list in video'}</span>
+          <span className="muted">{data.events.length ? `${Math.min(data.events.length, data.eventLayout === 'list' ? 6 : MAX_EVENTS)} shown in video` : 'No functions in video'}</span>
         </div>
         <p className="muted">Every family does it differently. Start from a preset, then rename, re-order, remove (✕) or add your own.</p>
         <div className="chips presets">
@@ -91,22 +181,31 @@ export default function DetailsStep({ data, update }) {
             </button>
           ))}
         </div>
+        <div className="field">
+          <span className="field-label">How functions appear in the video</span>
+          <div className="chips">
+            <button type="button" className={`chip ${data.eventLayout !== 'list' ? 'on' : ''}`} onClick={() => update({ eventLayout: 'pages' })}>
+              📄 A page for each function
+            </button>
+            <button type="button" className={`chip ${data.eventLayout === 'list' ? 'on' : ''}`} onClick={() => update({ eventLayout: 'list' })}>
+              📋 All on one page
+            </button>
+          </div>
+        </div>
         <div className="events">
           {data.events.map((ev, i) => (
-            <div className="event-row" key={i}>
-              <input className="ev-name" value={ev.name} onChange={(e) => setEvent(i, { name: e.target.value })} placeholder="Event name" maxLength={28} aria-label="Event name" />
-              <input type="date" value={ev.date} onChange={(e) => setEvent(i, { date: e.target.value })} aria-label="Event date" />
-              <input type="time" value={ev.time} onChange={(e) => setEvent(i, { time: e.target.value })} aria-label="Event time" />
-              <input className="ev-venue" value={ev.venue} onChange={(e) => setEvent(i, { venue: e.target.value })} placeholder="Venue (optional)" maxLength={50} aria-label="Event venue" />
-              <div className="ev-actions">
-                <button type="button" className="icon-btn" onClick={() => move(i, -1)} aria-label="Move up">↑</button>
-                <button type="button" className="icon-btn" onClick={() => move(i, 1)} aria-label="Move down">↓</button>
-                <button type="button" className="icon-btn danger" onClick={() => removeEvent(i)} aria-label="Remove event">✕</button>
-              </div>
-            </div>
+            <EventCard
+              key={i}
+              ev={ev}
+              onChange={(patch) => setEvent(i, patch)}
+              onUp={() => move(i, -1)}
+              onDown={() => move(i, 1)}
+              onRemove={() => removeEvent(i)}
+              showExtras={data.eventLayout !== 'list'}
+            />
           ))}
         </div>
-        {data.events.length < 6 && (
+        {data.events.length < MAX_EVENTS && (
           <div className="chips">
             {unused.slice(0, 6).map((s) => (
               <button key={s} type="button" className="chip" onClick={() => addEvent(s)}>

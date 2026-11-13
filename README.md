@@ -4,7 +4,7 @@ Animated wedding video invitations, made entirely in the browser.
 
 1. **Template**: 19 templates in Traditional, Funny, Gen-Z, Groovy and Playful styles (Royal Mandap, Group Chat, Breaking News, Retro Arcade, Disco Shaadi, Cricket Match Day…). Every line of text is editable, plus colours and which sections appear.
 2. **Couple**: upload a photo of each partner. MediaPipe face landmarks estimate skin tone, hair colour, face shape and beard, and turn them into a bitmoji-style avatar that you can fine-tune.
-3. **Details**: date, venue, families, functions (presets like "Only wedding" or "Haldi + Mehendi + Wedding", fully editable), hashtag, RSVP.
+3. **Details**: date, venue, families, functions (presets like "Only wedding" or "Haldi + Mehendi + Wedding", fully editable), hashtag, RSVP. Each function gets its own page in the video with its own emoji, an optional note (e.g. dress code) and an optional photo, or all functions can share one page.
 4. **Preview & Download**: live preview with generated music, then export a 1080×1920 MP4.
 
 All of it is free and runs client-side: no server, no API keys, and photos never leave the device.

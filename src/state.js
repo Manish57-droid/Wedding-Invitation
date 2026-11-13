@@ -20,9 +20,9 @@ export function initialData() {
     venue: 'The Royal Palms',
     address: 'Lake Road, Udaipur, Rajasthan',
     events: [
-      { name: 'Haldi', date: isoInDays(88), time: '10:00', venue: '' },
-      { name: 'Mehendi', date: isoInDays(88), time: '16:00', venue: '' },
-      { name: 'Sangeet', date: isoInDays(89), time: '19:00', venue: '' },
+      { name: 'Haldi', date: isoInDays(88), time: '10:00', venue: '', note: 'Dress code: Yellow 💛' },
+      { name: 'Mehendi', date: isoInDays(88), time: '16:00', venue: '', note: 'Wear green 💚' },
+      { name: 'Sangeet', date: isoInDays(89), time: '19:00', venue: '', note: 'Come ready to dance 💃' },
       { name: 'Wedding', date: isoInDays(90), time: '19:30', venue: '' },
       { name: 'Reception', date: isoInDays(91), time: '20:00', venue: '' },
     ],
@@ -35,6 +35,8 @@ export function initialData() {
     // empty values fall back to the template's own wording / colours
     custom: { accent: '', heading: '', texts: {} },
     scenes: { families: true, dateVenue: true, events: true },
+    // 'pages' = one page per function, 'list' = all functions on one page
+    eventLayout: 'pages',
   }
 }
 
@@ -74,7 +76,7 @@ export function saveData(data) {
   } catch {
     // quota exceeded / private mode: retry without photos
     try {
-      localStorage.setItem(KEY, JSON.stringify({ ...data, groom: { ...data.groom, photo: null }, bride: { ...data.bride, photo: null } }))
+      localStorage.setItem(KEY, JSON.stringify({ ...data, groom: { ...data.groom, photo: null }, bride: { ...data.bride, photo: null }, events: data.events.map((e) => ({ ...e, image: null })) }))
     } catch {
       // give up silently; persistence is a convenience
     }
